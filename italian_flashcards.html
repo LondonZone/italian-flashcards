@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>David's Italian Flashcards</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,500&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    --paper:#F6F1E4;
+    --ink:#20303D;
+    --navy:#1F3A52;
+    --ochre:#C9852B;
+    --rust:#B5482F;
+    --sage:#5C7A5C;
+    --line:#D8CEB8;
+    --card-back:#EFE7D2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    font-family:'Space Mono', monospace;
+    color:var(--ink);
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  header{margin-bottom:14px; position:relative;}
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--rust);
+    font-weight:700;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:32px;
+    margin:4px 0 2px;
+    color:var(--navy);
+  }
+  .sub{font-size:12.5px; color:#5a6b78; margin-bottom:14px;}
+
+  .stamp{
+    position:absolute;
+    top:0px; right:0px;
+    width:58px; height:58px;
+    border:2px dashed var(--rust);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transform:rotate(-8deg);
+    color:var(--rust);
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:11px;
+    text-align:center;
+    line-height:1.1;
+    opacity:0.85;
+  }
+
+  .mode-toggle{
+    display:flex;
+    gap:0;
+    border:2px solid var(--navy);
+    border-radius:6px;
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+  .mode-btn{
+    flex:1;
+    font-family:'Space Mono', monospace;
+    font-size:11.5px;
+    font-weight:700;
+    padding:10px 4px;
+    border:none;
+    background:transparent;
+    color:var(--navy);
+    cursor:pointer;
+    letter-spacing:0.02em;
+  }
+  .mode-btn.active{
+    background:var(--navy);
+    color:var(--paper);
+  }
+
+  .filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:18px;
+  }
+  .filter-btn{
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    padding:6px 11px;
+    border-radius:14px;
+    border:1.5px solid var(--navy);
+    background:transparent;
+    color:var(--navy);
+    cursor:pointer;
+    letter-spacing:0.02em;
+  }
+  .filter-btn.active{
+    background:var(--navy);
+    color:var(--paper);
+  }
+
+  .deck-status{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11px;
+    color:#5a6b78;
+    margin-bottom:8px;
+  }
+  .progress-track{
+    height:4px;
+    background:var(--line);
+    border-radius:2px;
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--ochre);
+    transition:width 0.25s ease;
+  }
+
+  /* FLASHCARDS */
+  .card-stage{
+    perspective:1400px;
+    margin-bottom:18px;
+  }
+  .card{
+    position:relative;
+    height:230px;
+    border-radius:4px;
+    cursor:pointer;
+    transform-style:preserve-3d;
+    transition:transform 0.5s cubic-bezier(.4,.2,.2,1);
+  }
+  .card.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    border-radius:4px;
+    border:2px solid var(--navy);
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    box-shadow:5px 5px 0 rgba(31,58,82,0.15);
+  }
+  .front{background:var(--paper);}
+  .back{background:var(--card-back); transform:rotateY(180deg);}
+  .tag{
+    position:absolute;
+    top:12px; left:16px;
+    font-size:9.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--sage);
+    font-weight:700;
+  }
+  .prompt{
+    font-family:'Fraunces', serif;
+    font-size:24px;
+    font-weight:600;
+    color:var(--navy);
+    line-height:1.3;
+  }
+  .answer{
+    font-family:'Fraunces', serif;
+    font-size:22px;
+    font-weight:600;
+    color:var(--rust);
+    line-height:1.3;
+    margin-bottom:6px;
+  }
+  .note{font-size:12px; color:#4a5b68; line-height:1.5;}
+  .flip-hint{
+    position:absolute;
+    bottom:12px; right:16px;
+    font-size:9.5px;
+    color:#8a8474;
+    letter-spacing:0.05em;
+  }
+
+  .speak-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:34px; height:34px;
+    border-radius:50%;
+    border:2px solid var(--navy);
+    background:var(--paper);
+    color:var(--navy);
+    cursor:pointer;
+    font-size:15px;
+    flex-shrink:0;
+    padding:0;
+  }
+  .speak-btn:hover{background:var(--navy); color:var(--paper);}
+  .speak-btn:active{transform:scale(0.94);}
+  .speak-btn.small{width:28px; height:28px; font-size:12px;}
+  .speak-row{display:flex; align-items:center; gap:10px;}
+
+  .controls{display:flex; gap:10px;}
+  .ctrl-btn{
+    flex:1;
+    font-family:'Space Mono', monospace;
+    font-size:13px;
+    font-weight:700;
+    padding:12px;
+    border-radius:4px;
+    border:2px solid var(--navy);
+    background:var(--navy);
+    color:var(--paper);
+    cursor:pointer;
+    letter-spacing:0.03em;
+  }
+  .ctrl-btn.secondary{background:transparent; color:var(--navy);}
+  .ctrl-btn:active{transform:translateY(1px);}
+  .ctrl-btn:disabled{opacity:0.4; cursor:default;}
+
+  /* FILL IN THE BLANK */
+  .quiz-card{
+    border:2px solid var(--navy);
+    border-radius:4px;
+    background:var(--paper);
+    padding:26px 22px;
+    margin-bottom:16px;
+    box-shadow:5px 5px 0 rgba(31,58,82,0.15);
+    position:relative;
+  }
+  .quiz-sentence{
+    font-family:'Fraunces', serif;
+    font-size:19px;
+    font-weight:600;
+    color:var(--navy);
+    line-height:1.5;
+    margin-bottom:6px;
+  }
+  .quiz-translation{
+    font-size:11.5px;
+    color:#5a6b78;
+    margin-bottom:18px;
+    font-style:italic;
+  }
+  .blank-input{
+    font-family:'Space Mono', monospace;
+    font-size:15px;
+    padding:10px 12px;
+    width:100%;
+    border:2px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+    color:var(--ink);
+    margin-bottom:12px;
+  }
+  .blank-input:focus{outline:none; border-color:var(--ochre);}
+  .blank-input.correct{border-color:var(--sage); background:#eef4ea;}
+  .blank-input.incorrect{border-color:var(--rust); background:#fbeae6;}
+
+  .feedback{
+    font-size:13px;
+    line-height:1.6;
+    padding:10px 12px;
+    border-radius:4px;
+    margin-bottom:12px;
+    display:none;
+  }
+  .feedback.show{display:block;}
+  .feedback.correct{background:#eef4ea; color:#3d5c3d;}
+  .feedback.incorrect{background:#fbeae6; color:#8a3a28;}
+  .feedback .correct-answer{font-weight:700; font-family:'Fraunces', serif;}
+
+  .quiz-controls{display:flex; gap:10px;}
+
+  .score-badge{
+    position:absolute;
+    top:-10px; right:16px;
+    background:var(--ochre);
+    color:var(--paper);
+    font-size:11px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:12px;
+  }
+
+  .empty{text-align:center; padding:40px 20px; color:#5a6b78; font-size:13px;}
+
+  /* LEARN MODE */
+  .learn-stats{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .learn-stat{
+    flex:1;
+    border:2px solid var(--navy);
+    border-radius:4px;
+    padding:8px 6px;
+    text-align:center;
+    background:var(--paper);
+  }
+  .learn-stat .num{
+    font-family:'Fraunces', serif;
+    font-size:20px;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .learn-stat .lbl{
+    font-size:9px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:#5a6b78;
+  }
+  .learn-stat.mastered .num{color:var(--sage);}
+  .learn-stat.learning .num{color:var(--ochre);}
+
+  .learn-card{
+    border:2px solid var(--navy);
+    border-radius:4px;
+    background:var(--paper);
+    padding:26px 22px;
+    margin-bottom:16px;
+    box-shadow:5px 5px 0 rgba(31,58,82,0.15);
+    position:relative;
+  }
+  .learn-tag{
+    font-size:9.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--sage);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .learn-qtype{
+    font-size:10px;
+    color:#8a8474;
+    letter-spacing:0.04em;
+    margin-bottom:4px;
+  }
+  .learn-prompt{
+    font-family:'Fraunces', serif;
+    font-size:21px;
+    font-weight:600;
+    color:var(--navy);
+    line-height:1.35;
+    margin-bottom:18px;
+  }
+  .mc-options{display:flex; flex-direction:column; gap:8px; margin-bottom:8px;}
+  .mc-option{
+    font-family:'Space Mono', monospace;
+    font-size:14px;
+    text-align:left;
+    padding:12px 14px;
+    border:2px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .mc-option:hover{border-color:var(--ochre);}
+  .mc-option.selected-correct{border-color:var(--sage); background:#eef4ea; color:#3d5c3d; font-weight:700;}
+  .mc-option.selected-incorrect{border-color:var(--rust); background:#fbeae6; color:#8a3a28; font-weight:700;}
+  .mc-option.reveal-correct{border-color:var(--sage); background:#eef4ea; color:#3d5c3d; font-weight:700;}
+  .mc-option:disabled{cursor:default;}
+
+  .learn-note{font-size:12px; color:#4a5b68; line-height:1.5; margin-top:10px;}
+
+  .round-complete{
+    text-align:center;
+    padding:30px 20px;
+  }
+  .round-complete h2{
+    font-family:'Fraunces', serif;
+    color:var(--navy);
+    font-size:24px;
+    margin-bottom:8px;
+  }
+  .round-complete p{
+    font-size:13px;
+    color:#5a6b78;
+    margin-bottom:20px;
+    line-height:1.6;
+  }
+
+  @media (prefers-reduced-motion: reduce){ .card{transition:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Lezioni 1&ndash;3 &middot; A1</div>
+    <h1>Italiano con David</h1>
+    <div class="sub">Flashcards, fill-in-the-blank, and Learn mode &mdash; straight from your lesson notes.</div>
+    <div class="stamp">POSTA<br>ITALIANA</div>
+  </header>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeCardsBtn">Flashcards</button>
+    <button class="mode-btn" id="modeQuizBtn">Fill in Blank</button>
+    <button class="mode-btn" id="modeLearnBtn">Learn</button>
+  </div>
+
+  <!-- FLASHCARD MODE -->
+  <div id="cardsMode">
+    <div class="filters" id="filters"></div>
+
+    <div class="deck-status">
+      <span id="deckLabel">Card 1 of 1</span>
+      <span id="deckCategory">All</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+    <div class="card-stage">
+      <div class="card" id="card">
+        <div class="face front">
+          <div class="tag" id="frontTag">TAG</div>
+          <div class="prompt" id="frontText">Prompt</div>
+          <div class="flip-hint">tap to flip</div>
+        </div>
+        <div class="face back">
+          <div class="tag" id="backTag">TAG</div>
+          <div class="speak-row">
+            <div class="answer" id="backText">Answer</div>
+            <span id="backSpeakSlot"></span>
+          </div>
+          <div class="note" id="backNote"></div>
+          <div class="flip-hint">tap to flip back</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn secondary" id="prevBtn">&larr; Prev</button>
+      <button class="ctrl-btn secondary" id="shuffleBtn">Shuffle</button>
+      <button class="ctrl-btn" id="nextBtn">Next &rarr;</button>
+    </div>
+  </div>
+
+  <!-- QUIZ MODE -->
+  <div id="quizMode" style="display:none;">
+    <div class="filters" id="quizFilters"></div>
+
+    <div class="deck-status">
+      <span id="quizLabel">Sentence 1 of 1</span>
+      <span id="quizCategory">All</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="quizProgressFill" style="width:0%"></div></div>
+
+    <div class="quiz-card">
+      <div class="score-badge" id="scoreBadge">0 / 0</div>
+      <div class="quiz-sentence" id="quizSentence">Sentence with ___ here.</div>
+      <div class="quiz-translation" id="quizTranslation">translation</div>
+      <input type="text" class="blank-input" id="blankInput" placeholder="type the missing word(s)..." autocomplete="off">
+      <div class="feedback" id="feedback"></div>
+      <div class="quiz-controls">
+        <button class="ctrl-btn secondary" id="checkBtn">Check</button>
+        <button class="ctrl-btn" id="quizNextBtn">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEARN MODE -->
+  <div id="learnMode" style="display:none;">
+    <div class="filters" id="learnFilters"></div>
+
+    <div class="learn-stats">
+      <div class="learn-stat mastered"><div class="num" id="masteredCount">0</div><div class="lbl">Mastered</div></div>
+      <div class="learn-stat learning"><div class="num" id="learningCount">0</div><div class="lbl">Learning</div></div>
+      <div class="learn-stat"><div class="num" id="remainingCount">0</div><div class="lbl">Left this round</div></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="learnProgressFill" style="width:0%"></div></div>
+
+    <div id="learnCardWrap"></div>
+  </div>
+
+</div>
+
+<script>
+/* ---------- TEXT TO SPEECH ---------- */
+let italianVoice = null;
+function loadItalianVoice(){
+  if(!('speechSynthesis' in window)) return;
+  const voices = window.speechSynthesis.getVoices();
+  italianVoice = voices.find(v => v.lang === 'it-IT') || voices.find(v => v.lang && v.lang.startsWith('it')) || null;
+}
+if('speechSynthesis' in window){
+  loadItalianVoice();
+  window.speechSynthesis.onvoiceschanged = loadItalianVoice;
+}
+function speakItalian(text){
+  if(!text) return;
+  // strip parenthetical hints and slashes for cleaner pronunciation, e.g. "adesso / ora" -> speak "adesso"
+  const clean = text.split('/')[0].replace(/\([^)]*\)/g, '').trim();
+  if(!clean) return;
+
+  // Primary: Google Translate's TTS voice (more natural), works since you're online.
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(clean) + '&tl=it&client=tw-ob';
+  const audio = new Audio(url);
+  audio.onerror = () => speakItalianFallback(clean);
+  audio.play().catch(() => speakItalianFallback(clean));
+}
+function speakItalianFallback(clean){
+  if(!('speechSynthesis' in window)){
+    alert("Couldn't reach the online voice, and your browser doesn't support offline text-to-speech either.");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = 'it-IT';
+  if(italianVoice) utter.voice = italianVoice;
+  utter.rate = 0.9;
+  window.speechSynthesis.speak(utter);
+}
+function speakerButton(text, sizeClass){
+  const btn = document.createElement('button');
+  btn.className = 'speak-btn' + (sizeClass ? ' ' + sizeClass : '');
+  btn.type = 'button';
+  btn.innerHTML = '🔊';
+  btn.setAttribute('aria-label', 'Listen in Italian');
+  btn.addEventListener('click', (e) => { e.stopPropagation(); speakItalian(text); });
+  return btn;
+}
+
+/* ---------- FLASHCARD DECK ---------- */
+const DECK = [
+  {cat:"Essere", front:"io ___ (essere)", back:"sono", note:"I am"},
+  {cat:"Essere", front:"tu ___ (essere)", back:"sei", note:"you are"},
+  {cat:"Essere", front:"lui/lei ___ (essere)", back:"è", note:"he/she is"},
+  {cat:"Essere", front:"noi ___ (essere)", back:"siamo", note:"we are"},
+  {cat:"Essere", front:"voi ___ (essere)", back:"siete", note:"you guys are"},
+  {cat:"Essere", front:"loro ___ (essere)", back:"sono", note:"they are — same as io"},
+
+  {cat:"Avere", front:"io ___ (avere)", back:"ho", note:"I have — silent h"},
+  {cat:"Avere", front:"tu ___ (avere)", back:"hai", note:"you have"},
+  {cat:"Avere", front:"lui/lei ___ (avere)", back:"ha", note:"he/she has — your most common mix-up with 'hai'"},
+  {cat:"Avere", front:"noi ___ (avere)", back:"abbiamo", note:"we have"},
+  {cat:"Avere", front:"voi ___ (avere)", back:"avete", note:"you guys have"},
+  {cat:"Avere", front:"loro ___ (avere)", back:"hanno", note:"they have"},
+
+  {cat:"-are verbs", front:"io ___ (lavorare)", back:"lavoro", note:"I work — the -o ending"},
+  {cat:"-are verbs", front:"tu ___ (lavorare)", back:"lavori", note:"you work — the -i ending"},
+  {cat:"-are verbs", front:"lui/lei ___ (lavorare)", back:"lavora", note:"he/she works — the -a ending"},
+  {cat:"-are verbs", front:"noi ___ (lavorare)", back:"lavoriamo", note:"we work — the -iamo ending"},
+  {cat:"-are verbs", front:"voi ___ (lavorare)", back:"lavorate", note:"you guys work — the -ate ending"},
+  {cat:"-are verbs", front:"loro ___ (lavorare)", back:"lavorano", note:"they work — the -ano ending"},
+  {cat:"-are verbs", front:"abitare", back:"to live", note:"io abito a Toronto", it:"front"},
+  {cat:"-are verbs", front:"parlare", back:"to speak", note:"noi parliamo italiano", it:"front"},
+  {cat:"-are verbs", front:"studiare", back:"to study", note:"voi studiate a Torino", it:"front"},
+  {cat:"-are verbs", front:"cucinare", back:"to cook", note:"tu cucini?", it:"front"},
+  {cat:"-are verbs", front:"imparare", back:"to learn", note:"io imparo l'italiano", it:"front"},
+  {cat:"-are verbs", front:"tornare", back:"to come back", note:"", it:"front"},
+  {cat:"-are verbs", front:"mangiare", back:"to eat", note:"", it:"front"},
+  {cat:"-are verbs", front:"ballare", back:"to dance", note:"io ballo bene", it:"front"},
+  {cat:"-are verbs", front:"suonare", back:"to play (an instrument)", note:"io suono la chitarra", it:"front"},
+
+  {cat:"Plurals", front:"la pizza →", back:"le pizze", note:"feminine: -a → -e"},
+  {cat:"Plurals", front:"la casa →", back:"le case", note:"feminine: -a → -e"},
+  {cat:"Plurals", front:"la mamma →", back:"le mamme", note:"feminine: -a → -e"},
+  {cat:"Plurals", front:"il denaro →", back:"i denari", note:"masculine: -o → -i"},
+  {cat:"Plurals", front:"il pesto →", back:"i pesti", note:"masculine: -o → -i"},
+  {cat:"Plurals", front:"la mamma fantastica →", back:"le mamme fantastiche", note:"-ca/-co adds 'h' before -e/-i to keep the hard sound"},
+
+  {cat:"Adjectives", front:"il gatto piccolo (plural)", back:"i gatti piccoli", note:"noun AND adjective both shift"},
+  {cat:"Adjectives", front:"la casa piccola (plural)", back:"le case piccole", note:""},
+  {cat:"Adjectives", front:"il ragazzo fantastico (plural)", back:"i ragazzi fantastici", note:""},
+  {cat:"Adjectives", front:"il problema grosso (plural)", back:"i problemi grossi", note:""},
+  {cat:"Adjectives", front:"la ragazza grossa (plural)", back:"le ragazze grosse", note:""},
+
+  {cat:"Possessives", front:"your parents (with article)", back:"i tuoi genitori", note:"article + possessive + noun — possessive agrees like an adjective"},
+  {cat:"Possessives", front:"il tuo cane (why 'tuo' not 'tuoi'?)", back:"cane is masc. singular", note:"tuo/tuoi/tua/tue agree with the noun, not with 'you'"},
+
+  {cat:"Phrases", front:"Where are you from?", back:"Di dove sei?", note:"not just 'dove sei' — that means 'where are you (right now)'"},
+  {cat:"Phrases", front:"What do you do for work?", back:"Che lavoro fai?", note:""},
+  {cat:"Phrases", front:"Do you have kids?", back:"Hai figli?", note:""},
+  {cat:"Phrases", front:"I don't have kids.", back:"Non ho figli.", note:"figli alone = plural, no 'un' needed"},
+  {cat:"Phrases", front:"I like the big... (mi piace or mi piacciono?)", back:"mi piacciono", note:"piacere agrees with the thing liked, not with 'I' — plural thing = piacciono"},
+  {cat:"Phrases", front:"What's your name?", back:"Come ti chiami?", note:"reflexive verb chiamarsi, previewed"},
+  {cat:"Phrases", front:"What's her name?", back:"Come si chiama?", note:""},
+  {cat:"Phrases", front:"Her name is Giulia.", back:"Si chiama Giulia.", note:""},
+
+  {cat:"Numbers", front:"0", back:"zero", note:""},
+  {cat:"Numbers", front:"1", back:"uno", note:""},
+  {cat:"Numbers", front:"2", back:"due", note:""},
+  {cat:"Numbers", front:"3", back:"tre", note:""},
+  {cat:"Numbers", front:"4", back:"quattro", note:""},
+  {cat:"Numbers", front:"5", back:"cinque", note:""},
+  {cat:"Numbers", front:"6", back:"sei", note:"same spelling as 'tu sei' — context tells them apart"},
+  {cat:"Numbers", front:"7", back:"sette", note:""},
+  {cat:"Numbers", front:"8", back:"otto", note:""},
+  {cat:"Numbers", front:"9", back:"nove", note:""},
+  {cat:"Numbers", front:"10", back:"dieci", note:""},
+  {cat:"Numbers", front:"11", back:"undici", note:""},
+  {cat:"Numbers", front:"12", back:"dodici", note:""},
+  {cat:"Numbers", front:"13", back:"tredici", note:""},
+  {cat:"Numbers", front:"14", back:"quattordici", note:""},
+  {cat:"Numbers", front:"15", back:"quindici", note:""},
+  {cat:"Numbers", front:"16", back:"sedici", note:""},
+  {cat:"Numbers", front:"17", back:"diciassette", note:""},
+  {cat:"Numbers", front:"18", back:"diciotto", note:""},
+  {cat:"Numbers", front:"19", back:"diciannove", note:""},
+  {cat:"Numbers", front:"20", back:"venti", note:""},
+  {cat:"Numbers", front:"21", back:"ventuno", note:"drops the -i of venti before uno"},
+  {cat:"Numbers", front:"22", back:"ventidue", note:""},
+  {cat:"Numbers", front:"23", back:"ventitré", note:"keeps the accent on tré"},
+  {cat:"Numbers", front:"28", back:"ventotto", note:"drops the -i of venti before otto"},
+  {cat:"Numbers", front:"30", back:"trenta", note:""},
+  {cat:"Numbers", front:"40", back:"quaranta", note:""},
+  {cat:"Numbers", front:"50", back:"cinquanta", note:""},
+  {cat:"Numbers", front:"60", back:"sessanta", note:""},
+  {cat:"Numbers", front:"70", back:"settanta", note:""},
+  {cat:"Numbers", front:"80", back:"ottanta", note:""},
+  {cat:"Numbers", front:"90", back:"novanta", note:""},
+  {cat:"Numbers", front:"100", back:"cento", note:""},
+  {cat:"Numbers", front:"1,000", back:"mille", note:""},
+  {cat:"Numbers", front:"How many?", back:"Quanti? / Quante?", note:"quanti = masc., quante = fem., agrees with the noun counted"},
+  {cat:"Numbers", front:"How many people?", back:"Quante persone?", note:"persone is feminine"},
+  {cat:"Numbers", front:"We are 5-8 people.", back:"Siamo 5-8 persone.", note:"siamo = we are, from essere"},
+  {cat:"Numbers", front:"How old are you?", back:"Quanti anni hai?", note:"literally 'how many years do you have' — uses avere, not essere"},
+  {cat:"Numbers", front:"I am 30 years old.", back:"Ho trent'anni.", note:"ho + number + anni — trenta drops the final -a before anni"},
+
+  {cat:"Connectors", front:"e", back:"and", note:"basic connector", it:"front"},
+  {cat:"Connectors", front:"ma", back:"but", note:"", it:"front"},
+  {cat:"Connectors", front:"anche", back:"also / too", note:"anche io = me too", it:"front"},
+  {cat:"Connectors", front:"molto", back:"very / a lot", note:"molto bene = very good", it:"front"},
+  {cat:"Connectors", front:"un po'", back:"a little / a bit", note:"un po' stanco = a bit tired", it:"front"},
+  {cat:"Connectors", front:"però", back:"however / but", note:"a bit stronger contrast than 'ma'", it:"front"},
+  {cat:"Connectors", front:"quindi", back:"so / therefore", note:"", it:"front"},
+  {cat:"Connectors", front:"perché", back:"because / why", note:"same word for both — context tells them apart", it:"front"},
+  {cat:"Connectors", front:"sempre", back:"always", note:"", it:"front"},
+  {cat:"Connectors", front:"ancora", back:"still / again / yet", note:"ci sono ancora = I'm still here", it:"front"},
+  {cat:"Connectors", front:"già", back:"already", note:"", it:"front"},
+  {cat:"Connectors", front:"adesso / ora", back:"now", note:"interchangeable", it:"front"},
+  {cat:"Connectors", front:"presto", back:"soon", note:"", it:"front"},
+  {cat:"Connectors", front:"tra poco", back:"in a little while / shortly", note:"", it:"front"},
+  {cat:"Connectors", front:"proprio", back:"exactly / precisely", note:"proprio perché = precisely because", it:"front"},
+  {cat:"Connectors", front:"tipo", back:"like (filler word)", note:"casual, same use as English 'like 5 people'", it:"front"},
+
+  {cat:"Combined", front:"How are you? / I'm well, but it could be better.", back:"Come stai? / Sto bene, ma potrebbe andare meglio.", note:"essere + ma connector"},
+  {cat:"Combined", front:"I'm still there, but much less.", back:"Ci sono ancora, ma molto meno.", note:"ancora + ma + molto together"},
+  {cat:"Combined", front:"I've also had a difficult year.", back:"Anche io ho avuto un anno difficile.", note:"anche + avere past tense"},
+  {cat:"Combined", front:"It's tough when too many hard things pile up one after another.", back:"È brutto quando si sommano troppe cose difficili una dopo l'altra.", note:"impersonal si + sequencing"},
+  {cat:"Combined", front:"I'm still going, just a lot less, exactly because of these difficulties.", back:"Ci sono ancora, ma molto meno, proprio perché ho avuto queste difficoltà.", note:"stacking three connectors: ancora, molto, proprio perché"},
+  {cat:"Combined", front:"I can do 10, but I need to check work first.", back:"Posso alle dieci, ma devo controllare il lavoro prima.", note:"potere + ma + dovere + prima"},
+  {cat:"Combined", front:"Great, let's do ten, and if you can't, tell me later.", back:"Ottimo, facciamo dieci, e se non puoi, mi dici dopo.", note:"fare + e + se (if) + dire"},
+  {cat:"Combined", front:"I'm also studying Italian and I'm doing well.", back:"Anche io studio italiano e sto bene.", note:"anche + e connector"},
+
+  {cat:"Texting", front:"How's it going?", back:"Come va?", note:"very common casual greeting"},
+  {cat:"Texting", front:"What are you up to?", back:"Cosa fai?", note:""},
+  {cat:"Texting", front:"I'm heading to Othership.", back:"Sto andando a Othership.", note:"stare + andare, present progressive"},
+  {cat:"Texting", front:"I hope you feel better soon.", back:"Spero che tu stia meglio presto.", note:"subjunctive preview — usable as a fixed phrase"},
+  {cat:"Texting", front:"I haven't seen you on social media in a couple of years.", back:"Non ti vedo sui social da qualche anno.", note:""},
+  {cat:"Texting", front:"Are you still going to the gym?", back:"Vai ancora in palestra?", note:""},
+  {cat:"Texting", front:"I worked all day.", back:"Ho lavorato tutto il giorno.", note:"avere + past participle"},
+  {cat:"Texting", front:"I'm unwinding now.", back:"Mi sto rilassando ora.", note:"reflexive verb, present progressive"},
+  {cat:"Texting", front:"Look at this for Thursday, if you can — best.", back:"Guarda questo per giovedì, se puoi, saluti.", note:"guardare command + se puoi + saluti sign-off"},
+  {cat:"Texting", front:"Busy day.", back:"Giornata impegnativa.", note:"no verb needed, quick reply"},
+  {cat:"Texting", front:"I need to eat soon.", back:"Ho bisogno di mangiare presto.", note:"ho bisogno di + infinitive"},
+  {cat:"Texting", front:"We need to see each other / catch up.", back:"Dobbiamo vederci.", note:"dovere + reflexive vederci"},
+  {cat:"Texting", front:"It's been over 10 years.", back:"Sono passati più di 10 anni.", note:"essere + passare, and più di for 'more than'"},
+  {cat:"Texting", front:"Too much time has passed.", back:"È passato troppo tempo.", note:""},
+  {cat:"Texting", front:"About time!", back:"Era ora!", note:"fixed idiomatic expression"},
+  {cat:"Texting", front:"How was the barbecue?", back:"Com'è andato il barbecue?", note:"andare in past tense with essere"},
+  {cat:"Texting", front:"Happy Friday!", back:"Buon venerdì!", note:"fixed greeting"},
+  {cat:"Texting", front:"Yes, no problem.", back:"Sì, nessun problema.", note:""},
+  {cat:"Texting", front:"Yes, of course, go ahead.", back:"Sì, certo, prego.", note:"warmer/more enthusiastic than a plain 'sì, prego'"},
+  {cat:"Texting", front:"See you later!", back:"A dopo!", note:""},
+  {cat:"Texting", front:"That works, see you later!", back:"Perfetto, a dopo!", note:""},
+  {cat:"Texting", front:"Thanks a million!", back:"Grazie mille!", note:"stronger than plain grazie"},
+  {cat:"Texting", front:"So, let's confirm September 12th.", back:"Allora confermiamo il 12 settembre.", note:"confermiamo = noi form (-iamo ending); dates use il + number + month, no ordinal"},
+  {cat:"Texting", front:"Around 5:30 or 6, does that work for you?", back:"Verso le cinque e mezza o le sei, va bene per te?", note:"verso = around (time); e mezza = and a half; times take le"},
+  {cat:"Texting", front:"Does that work for you?", back:"Va bene per te?", note:"reusable — great for proposing any plan"},
+  {cat:"Texting", front:"They can fit comfortably.", back:"Ci riescono a stare tranquilli.", note:"riuscire a + infinitive = 'to manage to do something', very common pattern"},
+  {cat:"Texting", front:"Let me know.", back:"Fammi sapere.", note:"imperative — 'make me know'; very common command form"},
+  {cat:"Texting", front:"I'll reserve it for you.", back:"Te la riservo.", note:"te = for you, la = it (the table/spot)"},
+];
+
+/* ---------- FILL-IN-THE-BLANK SENTENCES ---------- */
+const SENTENCES = [
+  {cat:"Essere", text:"Io ___ Davide.", translation:"I am Davide.", answer:["sono"]},
+  {cat:"Essere", text:"Loro ___ Marco e Matteo.", translation:"They are Marco and Matteo.", answer:["sono"]},
+  {cat:"Essere", text:"Tu ___ Pablo.", translation:"You are Pablo.", answer:["sei"]},
+  {cat:"Essere", text:"Noi ___ Marco e Davide.", translation:"We are Marco and Davide.", answer:["siamo"]},
+  {cat:"Essere", text:"Voi ___ Pablo e Sonia, giusto?", translation:"You guys are Pablo and Sonia, right?", answer:["siete"]},
+
+  {cat:"Avere", text:"Tu ___ un cane?", translation:"Do you have a dog?", answer:["hai"]},
+  {cat:"Avere", text:"Noi ___ molto lavoro.", translation:"We have a lot of work.", answer:["abbiamo"]},
+  {cat:"Avere", text:"Lei ___ i capelli lunghi.", translation:"She has long hair.", answer:["ha"]},
+  {cat:"Avere", text:"Voi ___ molto denaro.", translation:"You guys have a lot of money.", answer:["avete"]},
+  {cat:"Avere", text:"Loro ___ un problema.", translation:"They have a problem.", answer:["hanno"]},
+  {cat:"Avere", text:"Io ___ un cane, si chiama Giaccomo.", translation:"I have a dog, his name is Giaccomo.", answer:["ho"]},
+
+  {cat:"-are verbs", text:"Io ___ tutti i giorni.", translation:"I work every day. (lavorare)", answer:["lavoro"]},
+  {cat:"-are verbs", text:"Tu dove ___?", translation:"Where do you live? (abitare)", answer:["abiti"]},
+  {cat:"-are verbs", text:"Noi ___ italiano.", translation:"We speak Italian. (parlare)", answer:["parliamo"]},
+  {cat:"-are verbs", text:"Voi ___ a Torino.", translation:"You guys study in Torino. (studiare)", answer:["studiate"]},
+  {cat:"-are verbs", text:"Tu ___ molto bene.", translation:"You cook very well. (cucinare)", answer:["cucini"]},
+  {cat:"-are verbs", text:"Io ___ l'italiano con Pablo.", translation:"I'm learning Italian with Pablo. (imparare)", answer:["imparo"]},
+  {cat:"-are verbs", text:"Lei ___, she dances.", translation:"She dances. (ballare)", answer:["balla"]},
+  {cat:"-are verbs", text:"Io ___ la chitarra molto bene.", translation:"I play the guitar very well. (suonare)", answer:["suono"]},
+  {cat:"-are verbs", text:"Loro ___ in ospedale.", translation:"They work in a hospital. (lavorare)", answer:["lavorano"]},
+
+  {cat:"Plurals", text:"la pizza → le ___", translation:"pizza → pizzas", answer:["pizze"]},
+  {cat:"Plurals", text:"il denaro → i ___", translation:"money → moneys (i.e. plural form)", answer:["denari"]},
+  {cat:"Plurals", text:"la mamma → le ___", translation:"mom → moms", answer:["mamme"]},
+  {cat:"Plurals", text:"la mamma fantastica → le mamme ___", translation:"fantastic mom → fantastic moms", answer:["fantastiche"]},
+
+  {cat:"Adjectives", text:"il gatto piccolo → i gatti ___", translation:"small cat → small cats", answer:["piccoli"]},
+  {cat:"Adjectives", text:"la casa piccola → le case ___", translation:"small house → small houses", answer:["piccole"]},
+  {cat:"Adjectives", text:"il problema grosso → i problemi ___", translation:"big problem → big problems", answer:["grossi"]},
+  {cat:"Adjectives", text:"la ragazza fantastica → le ragazze ___", translation:"fantastic girl → fantastic girls", answer:["fantastiche"]},
+
+  {cat:"Possessives", text:"___ genitori hanno un cane?", translation:"Do your parents have a dog?", answer:["i tuoi","i tuoi genitori"]},
+
+  {cat:"Phrases", text:"___ dove sei?", translation:"Where are you from?", answer:["di"]},
+  {cat:"Phrases", text:"Che lavoro ___?", translation:"What do you do for work?", answer:["fai"]},
+  {cat:"Phrases", text:"Non ho ___.", translation:"I don't have kids.", answer:["figli"]},
+  {cat:"Phrases", text:"Mi ___ le case grandi.", translation:"I like big houses. (plural agreement)", answer:["piacciono"]},
+  {cat:"Phrases", text:"Come ti ___?", translation:"What's your name?", answer:["chiami"]},
+  {cat:"Phrases", text:"___ si chiama Giulia.", translation:"Her name is Giulia.", answer:["lei"]},
+
+  {cat:"Numbers", text:"Siamo ___ persone (5).", translation:"We are five people.", answer:["cinque"]},
+  {cat:"Numbers", text:"Il mio compleanno è il ___ settembre (12).", translation:"My birthday is September 12th.", answer:["dodici","12"]},
+  {cat:"Numbers", text:"___ anni hai?", translation:"How old are you?", answer:["quanti"]},
+  {cat:"Numbers", text:"Ho ___ anni (40).", translation:"I am 40 years old.", answer:["quaranta"]},
+  {cat:"Numbers", text:"___ posti avete giù?", translation:"How many seats do you have downstairs?", answer:["quanti"]},
+
+  {cat:"Connectors", text:"Sto bene, ___ potrebbe andare meglio.", translation:"I'm well, but it could be better.", answer:["ma"]},
+  {cat:"Connectors", text:"___ io ho avuto un anno difficile.", translation:"I've also had a difficult year.", answer:["anche"]},
+  {cat:"Connectors", text:"Ci sono ___, ma molto meno.", translation:"I'm still there, but much less.", answer:["ancora"]},
+  {cat:"Connectors", text:"Sono ___ stanco oggi.", translation:"I'm a bit tired today.", answer:["un po'","un po"]},
+  {cat:"Connectors", text:"___ perché ho avuto queste difficoltà.", translation:"Precisely because I've had these difficulties.", answer:["proprio"]},
+  {cat:"Connectors", text:"Ti dico ___.", translation:"I'll tell you later.", answer:["dopo"]},
+
+  {cat:"Combined", text:"Come stai? Sto bene, ma ___ andare meglio.", translation:"How are you? I'm well, but it could be better.", answer:["potrebbe"]},
+  {cat:"Combined", text:"Posso alle dieci, ma ___ controllare il lavoro prima.", translation:"I can do 10, but I need to check work first.", answer:["devo"]},
+  {cat:"Combined", text:"Ottimo, facciamo dieci, e se non puoi, mi ___ dopo.", translation:"Great, let's do ten, and if you can't, tell me later.", answer:["dici"]},
+  {cat:"Combined", text:"È brutto quando si ___ troppe cose difficili una dopo l'altra.", translation:"It's tough when too many hard things pile up one after another.", answer:["sommano"]},
+
+  {cat:"Texting", text:"Come ___?", translation:"How's it going?", answer:["va"]},
+  {cat:"Texting", text:"Sto ___ a Othership.", translation:"I'm heading to Othership.", answer:["andando"]},
+  {cat:"Texting", text:"Vai ___ in palestra?", translation:"Are you still going to the gym?", answer:["ancora"]},
+  {cat:"Texting", text:"Ho ___ tutto il giorno.", translation:"I worked all day.", answer:["lavorato"]},
+  {cat:"Texting", text:"Ho bisogno di ___ presto.", translation:"I need to eat soon.", answer:["mangiare"]},
+  {cat:"Texting", text:"___ ora!", translation:"About time!", answer:["era"]},
+  {cat:"Texting", text:"Com'è ___ il barbecue?", translation:"How was the barbecue?", answer:["andato"]},
+  {cat:"Texting", text:"Buon ___!", translation:"Happy Friday!", answer:["venerdì"]},
+  {cat:"Texting", text:"Sì, ___ problema.", translation:"Yes, no problem.", answer:["nessun"]},
+  {cat:"Texting", text:"Allora ___ il 12 settembre.", translation:"So, let's confirm September 12th.", answer:["confermiamo"]},
+  {cat:"Texting", text:"Verso le cinque e ___, va bene per te?", translation:"Around 5:30, does that work for you?", answer:["mezza"]},
+  {cat:"Texting", text:"___ sapere.", translation:"Let me know.", answer:["fammi"]},
+];
+
+/* ---------- SHARED STATE ---------- */
+let mode = "cards";
+
+/* FLASHCARD STATE */
+let current = 0;
+let flipped = false;
+let activeCat = "All";
+let order = [];
+const categories = ["All", ...new Set(DECK.map(c => c.cat))];
+
+function buildFilters(){
+  const el = document.getElementById('filters');
+  el.innerHTML = "";
+  categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => { activeCat = cat; resetOrder(); render(); buildFilters(); };
+    el.appendChild(btn);
+  });
+}
+function resetOrder(){
+  order = DECK.map((c,i)=>i).filter(i => activeCat === "All" || DECK[i].cat === activeCat);
+  current = 0; flipped = false;
+}
+function render(){
+  const card = document.getElementById('card');
+  card.classList.remove('flipped'); flipped = false;
+  if(order.length === 0){
+    document.getElementById('frontText').textContent = "No cards";
+    document.getElementById('backText').textContent = "";
+    document.getElementById('deckLabel').textContent = "0 of 0";
+    return;
+  }
+  const item = DECK[order[current]];
+  document.getElementById('frontTag').textContent = item.cat;
+  document.getElementById('backTag').textContent = item.cat;
+  document.getElementById('frontText').textContent = item.front;
+  document.getElementById('backText').textContent = item.back;
+  document.getElementById('backNote').textContent = item.note || "";
+  const backSlot = document.getElementById('backSpeakSlot');
+  backSlot.innerHTML = "";
+  backSlot.appendChild(speakerButton(item.it === "front" ? item.front : item.back));
+  document.getElementById('deckLabel').textContent = `Card ${current+1} of ${order.length}`;
+  document.getElementById('deckCategory').textContent = activeCat;
+  document.getElementById('progressFill').style.width = `${((current+1)/order.length)*100}%`;
+}
+document.getElementById('card').addEventListener('click', () => {
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if(order.length === 0) return;
+  current = (current + 1) % order.length; render();
+});
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if(order.length === 0) return;
+  current = (current - 1 + order.length) % order.length; render();
+});
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  for(let i = order.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  current = 0; render();
+});
+
+/* QUIZ STATE */
+let qCurrent = 0;
+let qActiveCat = "All";
+let qOrder = [];
+let qScore = 0;
+let qAttempted = 0;
+let qChecked = false;
+const qCategories = ["All", ...new Set(SENTENCES.map(s => s.cat))];
+
+function buildQuizFilters(){
+  const el = document.getElementById('quizFilters');
+  el.innerHTML = "";
+  qCategories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === qActiveCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => { qActiveCat = cat; resetQuizOrder(); renderQuiz(); buildQuizFilters(); };
+    el.appendChild(btn);
+  });
+}
+function resetQuizOrder(){
+  qOrder = SENTENCES.map((s,i)=>i).filter(i => qActiveCat === "All" || SENTENCES[i].cat === qActiveCat);
+  qCurrent = 0; qScore = 0; qAttempted = 0; qChecked = false;
+}
+function normalize(str){
+  return str.toLowerCase().trim()
+    .replace(/à/g,'a').replace(/è|é/g,'e').replace(/ì/g,'i').replace(/ò/g,'o').replace(/ù/g,'u')
+    .replace(/[?.!,]/g,'');
+}
+function renderQuiz(){
+  const input = document.getElementById('blankInput');
+  input.value = "";
+  input.classList.remove('correct','incorrect');
+  document.getElementById('feedback').classList.remove('show','correct','incorrect');
+  qChecked = false;
+
+  if(qOrder.length === 0){
+    document.getElementById('quizSentence').textContent = "No sentences";
+    document.getElementById('quizTranslation').textContent = "";
+    document.getElementById('quizLabel').textContent = "0 of 0";
+    return;
+  }
+  const item = SENTENCES[qOrder[qCurrent]];
+  document.getElementById('quizSentence').textContent = item.text;
+  document.getElementById('quizTranslation').textContent = item.translation;
+  document.getElementById('quizLabel').textContent = `Sentence ${qCurrent+1} of ${qOrder.length}`;
+  document.getElementById('quizCategory').textContent = qActiveCat;
+  document.getElementById('quizProgressFill').style.width = `${((qCurrent+1)/qOrder.length)*100}%`;
+  document.getElementById('scoreBadge').textContent = `${qScore} / ${qAttempted}`;
+  input.focus();
+}
+function checkAnswer(){
+  if(qOrder.length === 0) return;
+  const item = SENTENCES[qOrder[qCurrent]];
+  const input = document.getElementById('blankInput');
+  const userVal = normalize(input.value);
+  const isCorrect = item.answer.some(a => normalize(a) === userVal);
+  const feedback = document.getElementById('feedback');
+
+  if(!qChecked){
+    qAttempted++;
+    if(isCorrect) qScore++;
+    qChecked = true;
+    document.getElementById('scoreBadge').textContent = `${qScore} / ${qAttempted}`;
+  }
+
+  input.classList.remove('correct','incorrect');
+  input.classList.add(isCorrect ? 'correct' : 'incorrect');
+  feedback.classList.remove('correct','incorrect');
+  feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+  feedback.innerHTML = isCorrect
+    ? "Correct! Well done."
+    : `Not quite — correct answer: <span class="correct-answer">${item.answer[0]}</span>`;
+  const speakSlot = document.createElement('span');
+  speakSlot.style.marginLeft = '8px';
+  speakSlot.appendChild(speakerButton(item.answer[0], 'small'));
+  feedback.appendChild(speakSlot);
+}
+document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+document.getElementById('blankInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    if(!qChecked){ checkAnswer(); } else { qCurrent = (qCurrent+1) % qOrder.length; renderQuiz(); }
+  }
+});
+document.getElementById('quizNextBtn').addEventListener('click', () => {
+  if(qOrder.length === 0) return;
+  qCurrent = (qCurrent + 1) % qOrder.length;
+  renderQuiz();
+});
+
+/* ---------- LEARN MODE (Quizlet-style) ---------- */
+// Each learn item: {front, back, note, cat} pulled from DECK.
+// Mastery tracking: needs 2 correct in a row to be "mastered" and removed from rotation.
+// First correct answer per item -> multiple choice. Once seen correctly once, next time it's typed recall.
+let learnActiveCat = "All";
+let learnPool = [];       // indices into DECK still in rotation this round
+let learnMastery = {};    // idx -> {streak:0, seenOnce:false}
+let learnQueue = [];      // shuffled queue of idx to ask this round
+let learnCurrentIdx = null;
+let learnCurrentType = "mc"; // "mc" or "type"
+let learnAnswered = false;
+let learnMasteredSet = new Set();
+
+const learnCategories = ["All", ...new Set(DECK.map(c => c.cat))];
+
+function buildLearnFilters(){
+  const el = document.getElementById('learnFilters');
+  el.innerHTML = "";
+  learnCategories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === learnActiveCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => { learnActiveCat = cat; initLearnRound(); buildLearnFilters(); };
+    el.appendChild(btn);
+  });
+}
+
+function initLearnRound(){
+  const indices = DECK.map((c,i)=>i).filter(i => learnActiveCat === "All" || DECK[i].cat === learnActiveCat);
+  learnPool = indices.filter(i => !learnMasteredSet.has(i));
+  learnMastery = {};
+  learnPool.forEach(i => { learnMastery[i] = {streak:0}; });
+  buildLearnQueue();
+  nextLearnCard();
+}
+
+function buildLearnQueue(){
+  learnQueue = [...learnPool];
+  for(let i = learnQueue.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [learnQueue[i], learnQueue[j]] = [learnQueue[j], learnQueue[i]];
+  }
+}
+
+function makeMCOptions(correctIdx){
+  const correctItem = DECK[correctIdx];
+  const sameCatPool = DECK.map((c,i)=>i).filter(i => i !== correctIdx && DECK[i].cat === correctItem.cat);
+  const otherPool = DECK.map((c,i)=>i).filter(i => i !== correctIdx && DECK[i].cat !== correctItem.cat);
+  let distractorIdxs = [];
+  const pool1 = [...sameCatPool];
+  while(distractorIdxs.length < 3 && pool1.length > 0){
+    const r = Math.floor(Math.random() * pool1.length);
+    distractorIdxs.push(pool1.splice(r,1)[0]);
+  }
+  const pool2 = [...otherPool];
+  while(distractorIdxs.length < 3 && pool2.length > 0){
+    const r = Math.floor(Math.random() * pool2.length);
+    distractorIdxs.push(pool2.splice(r,1)[0]);
+  }
+  const options = [correctIdx, ...distractorIdxs].map(i => DECK[i].back);
+  for(let i = options.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  return options;
+}
+
+function updateLearnStats(){
+  document.getElementById('masteredCount').textContent = learnMasteredSet.size;
+  const learningCount = Object.keys(learnMastery).filter(k => learnMastery[k].streak > 0).length;
+  document.getElementById('learningCount').textContent = learningCount;
+  document.getElementById('remainingCount').textContent = learnQueue.length;
+  const totalThisRound = learnPool.length;
+  const doneThisRound = totalThisRound - learnQueue.length;
+  const pct = totalThisRound === 0 ? 0 : (doneThisRound/totalThisRound)*100;
+  document.getElementById('learnProgressFill').style.width = `${pct}%`;
+}
+
+function nextLearnCard(){
+  learnAnswered = false;
+  updateLearnStats();
+
+  if(learnPool.length === 0){
+    renderLearnAllMastered();
+    return;
+  }
+  if(learnQueue.length === 0){
+    // round finished — check if anything still not mastered (streak < 2)
+    const stillLearning = learnPool.filter(i => (learnMastery[i]?.streak || 0) < 2);
+    if(stillLearning.length === 0){
+      stillLearning.forEach(i => learnMasteredSet.add(i));
+      learnPool.forEach(i => learnMasteredSet.add(i));
+      renderRoundComplete(true);
+      return;
+    } else {
+      learnPool = stillLearning;
+      buildLearnQueue();
+    }
+  }
+
+  learnCurrentIdx = learnQueue[0];
+  const streak = learnMastery[learnCurrentIdx]?.streak || 0;
+  learnCurrentType = streak === 0 ? "mc" : "type";
+  renderLearnCard();
+}
+
+function renderLearnCard(){
+  const item = DECK[learnCurrentIdx];
+  const wrap = document.getElementById('learnCardWrap');
+
+  if(learnCurrentType === "mc"){
+    const options = makeMCOptions(learnCurrentIdx);
+    wrap.innerHTML = `
+      <div class="learn-card">
+        <div class="learn-tag">${item.cat}</div>
+        <div class="learn-qtype">Multiple choice</div>
+        <div class="learn-prompt">${item.front}</div>
+        <div class="mc-options" id="mcOptions"></div>
+        <div class="learn-note" id="learnNote" style="display:none;"></div>
+      </div>
+      <div class="controls">
+        <button class="ctrl-btn" id="learnNextBtn" disabled>Next &rarr;</button>
+      </div>
+    `;
+    const optWrap = document.getElementById('mcOptions');
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'mc-option';
+      btn.textContent = opt;
+      btn.onclick = () => handleLearnMC(opt, btn, optWrap);
+      optWrap.appendChild(btn);
+    });
+  } else {
+    wrap.innerHTML = `
+      <div class="learn-card">
+        <div class="learn-tag">${item.cat}</div>
+        <div class="learn-qtype">Type the answer</div>
+        <div class="learn-prompt">${item.front}</div>
+        <input type="text" class="blank-input" id="learnInput" placeholder="type in Italian..." autocomplete="off">
+        <div class="feedback" id="learnFeedback"></div>
+      </div>
+      <div class="controls">
+        <button class="ctrl-btn secondary" id="learnCheckBtn">Check</button>
+        <button class="ctrl-btn" id="learnNextBtn" disabled>Next &rarr;</button>
+      </div>
+    `;
+    const input = document.getElementById('learnInput');
+    input.focus();
+    document.getElementById('learnCheckBtn').addEventListener('click', handleLearnType);
+    input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){
+        if(!learnAnswered){ handleLearnType(); }
+        else { advanceLearnQueue(); }
+      }
+    });
+  }
+  document.getElementById('learnNextBtn').addEventListener('click', () => {
+    if(!learnAnswered) return;
+    advanceLearnQueue();
+  });
+}
+
+function handleLearnMC(chosen, btn, optWrap){
+  if(learnAnswered) return;
+  learnAnswered = true;
+  const item = DECK[learnCurrentIdx];
+  const isCorrect = normalize(chosen) === normalize(item.back);
+  Array.from(optWrap.children).forEach(b => {
+    b.disabled = true;
+    if(normalize(b.textContent) === normalize(item.back)){
+      b.classList.add('reveal-correct');
+    }
+  });
+  if(!isCorrect){
+    btn.classList.remove('reveal-correct');
+    btn.classList.add('selected-incorrect');
+  }
+  if(item.note){
+    const noteEl = document.getElementById('learnNote');
+    noteEl.style.display = 'block';
+    noteEl.textContent = item.note;
+  }
+  const noteEl2 = document.getElementById('learnNote');
+  if(noteEl2.style.display !== 'block'){ noteEl2.style.display = 'block'; }
+  const speakWrap = document.createElement('span');
+  speakWrap.style.marginLeft = '8px';
+  speakWrap.appendChild(speakerButton(item.it === "front" ? item.front : item.back, 'small'));
+  noteEl2.appendChild(speakWrap);
+  registerLearnResult(isCorrect);
+  document.getElementById('learnNextBtn').disabled = false;
+}
+
+function handleLearnType(){
+  if(learnAnswered) return;
+  const item = DECK[learnCurrentIdx];
+  const input = document.getElementById('learnInput');
+  const isCorrect = normalize(input.value) === normalize(item.back);
+  learnAnswered = true;
+  input.classList.add(isCorrect ? 'correct' : 'incorrect');
+  const feedback = document.getElementById('learnFeedback');
+  feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+  feedback.innerHTML = isCorrect
+    ? (item.note ? `Correct! <span style="opacity:0.8">${item.note}</span>` : "Correct!")
+    : `Not quite — answer: <span class="correct-answer">${item.back}</span>${item.note ? ' — '+item.note : ''}`;
+  const speakSlot2 = document.createElement('span');
+  speakSlot2.style.marginLeft = '8px';
+  speakSlot2.appendChild(speakerButton(item.it === "front" ? item.front : item.back, 'small'));
+  feedback.appendChild(speakSlot2);
+  registerLearnResult(isCorrect);
+  document.getElementById('learnNextBtn').disabled = false;
+}
+
+function registerLearnResult(isCorrect){
+  const m = learnMastery[learnCurrentIdx] || {streak:0};
+  if(isCorrect){
+    m.streak = (m.streak || 0) + 1;
+  } else {
+    m.streak = 0;
+  }
+  learnMastery[learnCurrentIdx] = m;
+
+  // remove current from front of queue
+  learnQueue.shift();
+
+  if(m.streak >= 2){
+    learnMasteredSet.add(learnCurrentIdx);
+    learnPool = learnPool.filter(i => i !== learnCurrentIdx);
+    saveLearnProgress();
+  } else {
+    // re-insert a few spots later so it comes back around, unless wrong (comes back sooner)
+    const reinsertAt = isCorrect
+      ? Math.min(learnQueue.length, 4)
+      : Math.min(learnQueue.length, 1);
+    learnQueue.splice(reinsertAt, 0, learnCurrentIdx);
+  }
+  updateLearnStats();
+}
+
+function advanceLearnQueue(){
+  nextLearnCard();
+}
+
+function renderRoundComplete(fullyDone){
+  const wrap = document.getElementById('learnCardWrap');
+  wrap.innerHTML = `
+    <div class="learn-card round-complete">
+      <h2>${fullyDone ? "Round complete! 🎉" : "Nice work!"}</h2>
+      <p>${fullyDone ? "Every card in this set has been answered right twice in a row." : "Keep going to master the rest."}</p>
+      <div class="controls">
+        <button class="ctrl-btn" id="restartLearnBtn">Practice again</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('restartLearnBtn').addEventListener('click', async () => {
+    await resetLearnProgress();
+    initLearnRound();
+  });
+}
+
+function renderLearnAllMastered(){
+  const wrap = document.getElementById('learnCardWrap');
+  wrap.innerHTML = `
+    <div class="learn-card round-complete">
+      <h2>All mastered! 🏆</h2>
+      <p>You've got every card in this category down cold. Reset to practice again, or switch categories above.</p>
+      <div class="controls">
+        <button class="ctrl-btn" id="restartLearnBtn">Reset & practice again</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('restartLearnBtn').addEventListener('click', async () => {
+    await resetLearnProgress();
+    initLearnRound();
+  });
+}
+
+function cardId(idx){
+  const item = DECK[idx];
+  return item.cat + "::" + item.front;
+}
+
+function hasArtifactStorage(){
+  return typeof window.storage !== 'undefined' && window.storage;
+}
+
+async function saveLearnProgress(){
+  const masteredIds = Array.from(learnMasteredSet).map(cardId);
+  try{
+    if(hasArtifactStorage()){
+      await window.storage.set('learn-progress', JSON.stringify({ masteredIds }), false);
+    } else {
+      localStorage.setItem('italian-learn-progress', JSON.stringify({ masteredIds }));
+    }
+  }catch(err){
+    console.error('Could not save progress:', err);
+  }
+}
+
+async function loadLearnProgress(){
+  try{
+    let data = null;
+    if(hasArtifactStorage()){
+      const result = await window.storage.get('learn-progress', false);
+      if(result && result.value) data = JSON.parse(result.value);
+    } else {
+      const raw = localStorage.getItem('italian-learn-progress');
+      if(raw) data = JSON.parse(raw);
+    }
+    if(data){
+      const idSet = new Set(data.masteredIds || []);
+      learnMasteredSet = new Set(
+        DECK.map((c,i)=>i).filter(i => idSet.has(cardId(i)))
+      );
+    }
+  }catch(err){
+    learnMasteredSet = new Set();
+  }
+}
+
+async function resetLearnProgress(){
+  learnMasteredSet = new Set();
+  try{
+    if(hasArtifactStorage()){
+      await window.storage.delete('learn-progress', false);
+    } else {
+      localStorage.removeItem('italian-learn-progress');
+    }
+  }catch(err){
+    // ignore
+  }
+}
+function setMode(newMode){
+  mode = newMode;
+  document.getElementById('modeCardsBtn').classList.toggle('active', mode === 'cards');
+  document.getElementById('modeQuizBtn').classList.toggle('active', mode === 'quiz');
+  document.getElementById('modeLearnBtn').classList.toggle('active', mode === 'learn');
+  document.getElementById('cardsMode').style.display = mode === 'cards' ? 'block' : 'none';
+  document.getElementById('quizMode').style.display = mode === 'quiz' ? 'block' : 'none';
+  document.getElementById('learnMode').style.display = mode === 'learn' ? 'block' : 'none';
+}
+document.getElementById('modeCardsBtn').addEventListener('click', () => setMode('cards'));
+document.getElementById('modeQuizBtn').addEventListener('click', () => setMode('quiz'));
+document.getElementById('modeLearnBtn').addEventListener('click', async () => {
+  setMode('learn');
+  if(learnCurrentIdx === null){
+    buildLearnFilters();
+    document.getElementById('learnCardWrap').innerHTML = '<div class="empty">Loading your saved progress...</div>';
+    await loadLearnProgress();
+    initLearnRound();
+  }
+});
+
+/* INIT */
+resetOrder(); buildFilters(); render();
+resetQuizOrder(); buildQuizFilters(); renderQuiz();
+</script>
+</body>
+</html>
