@@ -1261,6 +1261,18 @@ function hasArtifactStorage(){
   return typeof window.storage !== 'undefined' && window.storage;
 }
 
+let firestoreSaveTimer = null;
+function scheduleFirestoreSave(masteredIds){
+  clearTimeout(firestoreSaveTimer);
+  firestoreSaveTimer = setTimeout(async () => {
+    try{
+      await db.collection('progress').doc(currentUser.uid).set({ masteredIds });
+    }catch(err){
+      console.error('Could not sync progress to cloud:', err);
+    }
+  }, 1000);
+}
+
 async function saveLearnProgress(){
   const masteredIds = Array.from(learnMasteredSet).map(cardId);
   try{
@@ -1268,6 +1280,9 @@ async function saveLearnProgress(){
       await window.storage.set('learn-progress', JSON.stringify({ masteredIds }), false);
     } else {
       localStorage.setItem('italian-learn-progress', JSON.stringify({ masteredIds }));
+      if(hasFirebaseUser()){
+        scheduleFirestoreSave(masteredIds);
+      }
     }
   }catch(err){
     console.error('Could not save progress:', err);
@@ -1280,6 +1295,16 @@ async function loadLearnProgress(){
     if(hasArtifactStorage()){
       const result = await window.storage.get('learn-progress', false);
       if(result && result.value) data = JSON.parse(result.value);
+    } else if(hasFirebaseUser()){
+      const doc = await db.collection('progress').doc(currentUser.uid).get();
+      if(doc.exists) data = doc.data();
+      if(!data){
+        const raw = localStorage.getItem('italian-learn-progress');
+        if(raw) data = JSON.parse(raw);
+        if(data){
+          await db.collection('progress').doc(currentUser.uid).set(data);
+        }
+      }
     } else {
       const raw = localStorage.getItem('italian-learn-progress');
       if(raw) data = JSON.parse(raw);
@@ -1302,6 +1327,9 @@ async function resetLearnProgress(){
       await window.storage.delete('learn-progress', false);
     } else {
       localStorage.removeItem('italian-learn-progress');
+      if(hasFirebaseUser()){
+        await db.collection('progress').doc(currentUser.uid).delete();
+      }
     }
   }catch(err){
     // ignore
