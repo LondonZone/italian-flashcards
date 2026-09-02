@@ -488,6 +488,23 @@
 
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA_EXBxGTLmUkznsCtoSIkPIU7K_3ksjGI",
+  authDomain: "italian-flashcards-d968e.firebaseapp.com",
+  projectId: "italian-flashcards-d968e",
+  storageBucket: "italian-flashcards-d968e.firebasestorage.app",
+  messagingSenderId: "628215962609",
+  appId: "1:628215962609:web:8c1c13974946e98122c250"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+</script>
+
 <script>
 /* ---------- TEXT TO SPEECH ---------- */
 let italianVoice = null;
