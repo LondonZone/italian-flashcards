@@ -481,6 +481,11 @@
       <div class="learn-stat learning"><div class="num" id="learningCount">0</div><div class="lbl">Learning</div></div>
       <div class="learn-stat"><div class="num" id="remainingCount">0</div><div class="lbl">Left this round</div></div>
     </div>
+    <div class="learn-sync">
+      <span id="syncStatus" class="sync-status">Not signed in — progress saved on this device only.</span>
+      <button class="ctrl-btn" id="signInBtn">Sign in with Google</button>
+      <button class="ctrl-btn" id="signOutBtn" style="display:none;">Sign out</button>
+    </div>
     <div class="progress-track"><div class="progress-fill" id="learnProgressFill" style="width:0%"></div></div>
 
     <div id="learnCardWrap"></div>
@@ -1212,6 +1217,40 @@ function renderLearnAllMastered(){
     initLearnRound();
   });
 }
+
+let currentUser = null;
+
+function hasFirebaseUser(){
+  return !!currentUser;
+}
+
+auth.onAuthStateChanged(async (user) => {
+  currentUser = user;
+  const statusEl = document.getElementById('syncStatus');
+  const signInBtn = document.getElementById('signInBtn');
+  const signOutBtn = document.getElementById('signOutBtn');
+  if(user){
+    statusEl.textContent = `Signed in as ${user.email} — progress synced across devices.`;
+    signInBtn.style.display = 'none';
+    signOutBtn.style.display = 'inline-block';
+  } else {
+    statusEl.textContent = 'Not signed in — progress saved on this device only.';
+    signInBtn.style.display = 'inline-block';
+    signOutBtn.style.display = 'none';
+  }
+  if(learnCurrentIdx !== null){
+    await loadLearnProgress();
+    initLearnRound();
+  }
+});
+
+document.getElementById('signInBtn').addEventListener('click', () => {
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(err => console.error('Sign-in failed:', err));
+});
+document.getElementById('signOutBtn').addEventListener('click', () => {
+  auth.signOut().catch(err => console.error('Sign-out failed:', err));
+});
 
 function cardId(idx){
   const item = DECK[idx];
