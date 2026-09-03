@@ -799,9 +799,9 @@ let mode = "cards";
 /* FLASHCARD STATE */
 let current = 0;
 let flipped = false;
-let activeCat = "All";
+let activeCat = "All Grammar";
 let order = [];
-const categories = ["All", ...new Set(DECK.map(c => c.cat))];
+const categories = ["All Grammar", ...new Set(DECK.map(c => c.cat))];
 
 function buildFilters(){
   const el = document.getElementById('filters');
@@ -815,7 +815,7 @@ function buildFilters(){
   });
 }
 function resetOrder(){
-  order = DECK.map((c,i)=>i).filter(i => activeCat === "All" || DECK[i].cat === activeCat);
+  order = DECK.map((c,i)=>i).filter(i => activeCat === "All Grammar" ? DECK[i].cat !== "Texting" : DECK[i].cat === activeCat);
   current = 0; flipped = false;
 }
 function render(){
@@ -862,12 +862,12 @@ document.getElementById('shuffleBtn').addEventListener('click', () => {
 
 /* QUIZ STATE */
 let qCurrent = 0;
-let qActiveCat = "All";
+let qActiveCat = "All Grammar";
 let qOrder = [];
 let qScore = 0;
 let qAttempted = 0;
 let qChecked = false;
-const qCategories = ["All", ...new Set(SENTENCES.map(s => s.cat))];
+const qCategories = ["All Grammar", ...new Set(SENTENCES.map(s => s.cat))];
 
 function buildQuizFilters(){
   const el = document.getElementById('quizFilters');
@@ -881,7 +881,7 @@ function buildQuizFilters(){
   });
 }
 function resetQuizOrder(){
-  qOrder = SENTENCES.map((s,i)=>i).filter(i => qActiveCat === "All" || SENTENCES[i].cat === qActiveCat);
+  qOrder = SENTENCES.map((s,i)=>i).filter(i => qActiveCat === "All Grammar" ? SENTENCES[i].cat !== "Texting" : SENTENCES[i].cat === qActiveCat);
   qCurrent = 0; qScore = 0; qAttempted = 0; qChecked = false;
 }
 function normalize(str){
@@ -954,7 +954,7 @@ document.getElementById('quizNextBtn').addEventListener('click', () => {
 // Each learn item: {front, back, note, cat} pulled from DECK.
 // Mastery tracking: needs 2 correct in a row to be "mastered" and removed from rotation.
 // First correct answer per item -> multiple choice. Once seen correctly once, next time it's typed recall.
-let learnActiveCat = "All";
+let learnActiveCat = "All Grammar";
 let learnPool = [];       // indices into DECK still in rotation this round
 let learnMastery = {};    // idx -> {streak:0, seenOnce:false}
 let learnQueue = [];      // shuffled queue of idx to ask this round
@@ -964,7 +964,7 @@ let learnAnswered = false;
 let learnMasteredSet = new Set();
 let learnInitialized = false; // true once Learn mode has been entered at least once
 
-const learnCategories = ["All", ...new Set(DECK.map(c => c.cat))];
+const learnCategories = ["All Grammar", ...new Set(DECK.map(c => c.cat))];
 
 function buildLearnFilters(){
   const el = document.getElementById('learnFilters');
@@ -979,7 +979,7 @@ function buildLearnFilters(){
 }
 
 function initLearnRound(){
-  const indices = DECK.map((c,i)=>i).filter(i => learnActiveCat === "All" || DECK[i].cat === learnActiveCat);
+  const indices = DECK.map((c,i)=>i).filter(i => learnActiveCat === "All Grammar" ? DECK[i].cat !== "Texting" : DECK[i].cat === learnActiveCat);
   learnPool = indices.filter(i => !learnMasteredSet.has(i));
   learnMastery = {};
   learnPool.forEach(i => { learnMastery[i] = {streak:0}; });
@@ -998,7 +998,7 @@ function buildLearnQueue(){
 function makeMCOptions(correctIdx){
   const correctItem = DECK[correctIdx];
   const sameCatPool = DECK.map((c,i)=>i).filter(i => i !== correctIdx && DECK[i].cat === correctItem.cat);
-  const otherPool = DECK.map((c,i)=>i).filter(i => i !== correctIdx && DECK[i].cat !== correctItem.cat);
+  const otherPool = DECK.map((c,i)=>i).filter(i => i !== correctIdx && DECK[i].cat !== correctItem.cat && DECK[i].cat !== "Texting");
   let distractorIdxs = [];
   const pool1 = [...sameCatPool];
   while(distractorIdxs.length < 3 && pool1.length > 0){
