@@ -505,9 +505,17 @@ const firebaseConfig = {
   messagingSenderId: "628215962609",
   appId: "1:628215962609:web:8c1c13974946e98122c250"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const firebaseReady = typeof firebase !== 'undefined';
+let auth, db;
+if(firebaseReady){
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+} else {
+  console.warn('Firebase SDK failed to load — cross-device sync disabled, falling back to on-device progress only.');
+  const syncEl = document.querySelector('.learn-sync');
+  if(syncEl) syncEl.style.display = 'none';
+}
 </script>
 
 <script>
@@ -954,6 +962,7 @@ let learnCurrentIdx = null;
 let learnCurrentType = "mc"; // "mc" or "type"
 let learnAnswered = false;
 let learnMasteredSet = new Set();
+let learnInitialized = false; // true once Learn mode has been entered at least once
 
 const learnCategories = ["All", ...new Set(DECK.map(c => c.cat))];
 
@@ -1224,33 +1233,41 @@ function hasFirebaseUser(){
   return !!currentUser;
 }
 
-auth.onAuthStateChanged(async (user) => {
-  currentUser = user;
-  const statusEl = document.getElementById('syncStatus');
-  const signInBtn = document.getElementById('signInBtn');
-  const signOutBtn = document.getElementById('signOutBtn');
-  if(user){
-    statusEl.textContent = `Signed in as ${user.email} — progress synced across devices.`;
-    signInBtn.style.display = 'none';
-    signOutBtn.style.display = 'inline-block';
-  } else {
-    statusEl.textContent = 'Not signed in — progress saved on this device only.';
-    signInBtn.style.display = 'inline-block';
-    signOutBtn.style.display = 'none';
-  }
-  if(learnCurrentIdx !== null){
-    await loadLearnProgress();
-    initLearnRound();
-  }
-});
+if(firebaseReady){
+  auth.onAuthStateChanged(async (user) => {
+    currentUser = user;
+    const statusEl = document.getElementById('syncStatus');
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    if(user){
+      statusEl.textContent = `Signed in as ${user.email} — progress synced across devices.`;
+      signInBtn.style.display = 'none';
+      signOutBtn.style.display = 'inline-block';
+    } else {
+      statusEl.textContent = 'Not signed in — progress saved on this device only.';
+      signInBtn.style.display = 'inline-block';
+      signOutBtn.style.display = 'none';
+      // No user to write for anymore — drop any pending debounced cloud write
+      // so it doesn't fire later against a null currentUser.
+      clearTimeout(firestoreSaveTimer);
+      firestoreSaveTimer = null;
+    }
+    if(learnInitialized){
+      // Refresh mastered-set + displayed stats only — don't rebuild the
+      // in-progress round out from under the user.
+      await loadLearnProgress();
+      updateLearnStats();
+    }
+  });
 
-document.getElementById('signInBtn').addEventListener('click', () => {
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch(err => console.error('Sign-in failed:', err));
-});
-document.getElementById('signOutBtn').addEventListener('click', () => {
-  auth.signOut().catch(err => console.error('Sign-out failed:', err));
-});
+  document.getElementById('signInBtn').addEventListener('click', () => {
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+      .catch(err => console.error('Sign-in failed:', err));
+  });
+  document.getElementById('signOutBtn').addEventListener('click', () => {
+    auth.signOut().catch(err => console.error('Sign-out failed:', err));
+  });
+}
 
 function cardId(idx){
   const item = DECK[idx];
@@ -1265,6 +1282,7 @@ let firestoreSaveTimer = null;
 function scheduleFirestoreSave(masteredIds){
   clearTimeout(firestoreSaveTimer);
   firestoreSaveTimer = setTimeout(async () => {
+    firestoreSaveTimer = null;
     try{
       await db.collection('progress').doc(currentUser.uid).set({ masteredIds });
     }catch(err){
@@ -1272,6 +1290,22 @@ function scheduleFirestoreSave(masteredIds){
     }
   }, 1000);
 }
+
+// Best-effort flush of a pending debounced cloud save when the tab is being
+// hidden/closed, so a change right before close isn't silently lost.
+function flushPendingFirestoreSave(){
+  if(firestoreSaveTimer && hasFirebaseUser()){
+    clearTimeout(firestoreSaveTimer);
+    firestoreSaveTimer = null;
+    const masteredIds = Array.from(learnMasteredSet).map(cardId);
+    db.collection('progress').doc(currentUser.uid).set({ masteredIds })
+      .catch(err => console.error('Could not flush progress to cloud:', err));
+  }
+}
+window.addEventListener('pagehide', flushPendingFirestoreSave);
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden') flushPendingFirestoreSave();
+});
 
 async function saveLearnProgress(){
   const masteredIds = Array.from(learnMasteredSet).map(cardId);
@@ -1296,14 +1330,49 @@ async function loadLearnProgress(){
       const result = await window.storage.get('learn-progress', false);
       if(result && result.value) data = JSON.parse(result.value);
     } else if(hasFirebaseUser()){
-      const doc = await db.collection('progress').doc(currentUser.uid).get();
-      if(doc.exists) data = doc.data();
-      if(!data){
-        const raw = localStorage.getItem('italian-learn-progress');
-        if(raw) data = JSON.parse(raw);
+      const raw = localStorage.getItem('italian-learn-progress');
+      const localData = raw ? JSON.parse(raw) : null;
+      const localMasteredIds = (localData && localData.masteredIds) || [];
+      const lastSyncedUid = localStorage.getItem('italian-learn-progress-uid');
+      // Only trust local progress as belonging to this account if this
+      // device has never synced before, or last synced this same account —
+      // otherwise it could be a different user's progress on a shared browser.
+      const sameAccountAsLastSync = !lastSyncedUid || lastSyncedUid === currentUser.uid;
+
+      let cloudDoc = null;
+      let cloudReadFailed = false;
+      try{
+        const doc = await db.collection('progress').doc(currentUser.uid).get();
+        cloudDoc = doc.exists ? doc.data() : null;
+      }catch(err){
+        console.error('Could not read cloud progress, falling back to local:', err);
+        cloudReadFailed = true;
+      }
+
+      if(cloudReadFailed){
+        // Firestore unreachable (offline/transient) — fall back to whatever
+        // is on this device rather than wiping in-memory progress.
+        data = localData;
+      } else if(cloudDoc){
+        // Merge cloud + local so a locally-mastered card is never lost just
+        // because the cloud doc hadn't caught up yet.
+        const mergedIds = sameAccountAsLastSync
+          ? Array.from(new Set([...(cloudDoc.masteredIds || []), ...localMasteredIds]))
+          : (cloudDoc.masteredIds || []);
+        data = { masteredIds: mergedIds };
+        localStorage.setItem('italian-learn-progress', JSON.stringify(data));
+        localStorage.setItem('italian-learn-progress-uid', currentUser.uid);
+      } else {
+        // No cloud doc yet for this account. Only seed it from local
+        // progress if local data belongs to this same account (or this
+        // device has never synced) — never leak a different user's progress.
+        data = sameAccountAsLastSync ? localData : null;
         if(data){
-          await db.collection('progress').doc(currentUser.uid).set(data);
+          try{ await db.collection('progress').doc(currentUser.uid).set(data); }
+          catch(err){ console.error('Could not seed cloud progress:', err); }
+          localStorage.setItem('italian-learn-progress', JSON.stringify(data));
         }
+        localStorage.setItem('italian-learn-progress-uid', currentUser.uid);
       }
     } else {
       const raw = localStorage.getItem('italian-learn-progress');
@@ -1316,11 +1385,17 @@ async function loadLearnProgress(){
       );
     }
   }catch(err){
-    learnMasteredSet = new Set();
+    // Genuinely unexpected error (e.g. malformed JSON) — log it but don't
+    // blank an already-populated in-memory mastered set.
+    console.error('Could not load progress:', err);
   }
 }
 
 async function resetLearnProgress(){
+  // Cancel any pending debounced cloud write so it can't fire after the
+  // reset and resurrect the just-deleted progress.
+  clearTimeout(firestoreSaveTimer);
+  firestoreSaveTimer = null;
   learnMasteredSet = new Set();
   try{
     if(hasArtifactStorage()){
@@ -1353,6 +1428,7 @@ document.getElementById('modeLearnBtn').addEventListener('click', async () => {
     document.getElementById('learnCardWrap').innerHTML = '<div class="empty">Loading your saved progress...</div>';
     await loadLearnProgress();
     initLearnRound();
+    learnInitialized = true;
   }
 });
 
