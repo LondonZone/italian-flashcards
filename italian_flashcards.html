@@ -715,6 +715,26 @@ const DECK = [
   {cat:"Texting", front:"They can fit comfortably.", back:"Ci riescono a stare tranquilli.", note:"riuscire a + infinitive = 'to manage to do something', very common pattern"},
   {cat:"Texting", front:"Let me know.", back:"Fammi sapere.", note:"imperative — 'make me know'; very common command form"},
   {cat:"Texting", front:"I'll reserve it for you.", back:"Te la riservo.", note:"te = for you, la = it (the table/spot)"},
+  {cat:"-ere verbs", front:"io ___ (vivere)", back:"vivo", note:"I live — the -o ending, same as -are verbs"},
+  {cat:"-ere verbs", front:"tu ___ (vivere)", back:"vivi", note:"you live — the -i ending"},
+  {cat:"-ere verbs", front:"lui/lei ___ (vivere)", back:"vive", note:"he/she lives — the -e ending (not -a like -are verbs)"},
+  {cat:"-ere verbs", front:"noi ___ (vivere)", back:"viviamo", note:"we live — the -iamo ending"},
+  {cat:"-ere verbs", front:"voi ___ (vivere)", back:"vivete", note:"you guys live — the -ete ending"},
+  {cat:"-ere verbs", front:"loro ___ (vivere)", back:"vivono", note:"they live — the -ono ending"},
+  {cat:"-ere verbs", front:"correre", back:"to run", note:"", it:"front"},
+  {cat:"-ere verbs", front:"vivere", back:"to live", note:"io vivo a Toronto", it:"front"},
+  {cat:"-ere verbs", front:"scrivere", back:"to write", note:"voi scrivete = you guys write", it:"front"},
+  {cat:"-ire verbs", front:"io ___ (dormire)", back:"dormo", note:"I sleep — the -o ending"},
+  {cat:"-ire verbs", front:"tu ___ (dormire)", back:"dormi", note:"you sleep — the -i ending"},
+  {cat:"-ire verbs", front:"lui/lei ___ (dormire)", back:"dorme", note:"he/she sleeps — the -e ending"},
+  {cat:"-ire verbs", front:"noi ___ (dormire)", back:"dormiamo", note:"we sleep — the -iamo ending"},
+  {cat:"-ire verbs", front:"voi ___ (dormire)", back:"dormite", note:"you guys sleep — the -ite ending"},
+  {cat:"-ire verbs", front:"loro ___ (dormire)", back:"dormono", note:"they sleep — the -ono ending"},
+  {cat:"-ire verbs", front:"dormire", back:"to sleep", note:"", it:"front"},
+  {cat:"Phrases", front:"Is she Italian?", back:"Lei è italiana?", note:"è with accent = is (verb) — different from e (and)"},
+  {cat:"Phrases", front:"Where in Italy (are you from)?", back:"Di dove in Italia?", note:"natural follow-up to 'Di dove sei?'"},
+  {cat:"Phrases", front:"How old is she?", back:"Quanti anni ha?", note:"3rd person version of 'Quanti anni hai?' — uses ha, not hai"},
+  {cat:"Phrases", front:"She is 29 years old.", back:"Ha ventinove anni.", note:"same pattern as 'Ho trent'anni' but 3rd person"},
 ];
 
 /* ---------- FILL-IN-THE-BLANK SENTENCES ---------- */
@@ -791,6 +811,14 @@ const SENTENCES = [
   {cat:"Texting", text:"Allora ___ il 12 settembre.", translation:"So, let's confirm September 12th.", answer:["confermiamo"]},
   {cat:"Texting", text:"Verso le cinque e ___, va bene per te?", translation:"Around 5:30, does that work for you?", answer:["mezza"]},
   {cat:"Texting", text:"___ sapere.", translation:"Let me know.", answer:["fammi"]},
+  {cat:"-ere verbs", text:"Io ___ a Toronto.", translation:"I live in Toronto. (vivere)", answer:["vivo"]},
+  {cat:"-ere verbs", text:"Tu ___ in Colombia.", translation:"You live in Colombia. (vivere)", answer:["vivi"]},
+  {cat:"-ere verbs", text:"Voi ___ una lettera.", translation:"You guys write a letter. (scrivere)", answer:["scrivete"]},
+  {cat:"-ere verbs", text:"Loro ___ ogni mattina.", translation:"They run every morning. (correre)", answer:["corrono"]},
+  {cat:"-ire verbs", text:"Io ___ otto ore.", translation:"I sleep eight hours. (dormire)", answer:["dormo"]},
+  {cat:"-ire verbs", text:"Noi ___ presto.", translation:"We sleep early. (dormire)", answer:["dormiamo"]},
+  {cat:"Phrases", text:"Lei è ___?", translation:"Is she Italian?", answer:["italiana"]},
+  {cat:"Phrases", text:"___ anni ha?", translation:"How old is she?", answer:["quanti"]},
 ];
 
 /* ---------- SHARED STATE ---------- */
@@ -1053,7 +1081,8 @@ function nextLearnCard(){
 
   learnCurrentIdx = learnQueue[0];
   const streak = learnMastery[learnCurrentIdx]?.streak || 0;
-  learnCurrentType = streak === 0 ? "mc" : "type";
+  const answerWordCount = DECK[learnCurrentIdx].back.trim().split(/\s+/).length;
+  learnCurrentType = (streak === 0 || answerWordCount > 3) ? "mc" : "type";
   renderLearnCard();
 }
 
