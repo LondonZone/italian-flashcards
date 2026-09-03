@@ -1371,6 +1371,12 @@ async function loadLearnProgress(){
           try{ await db.collection('progress').doc(currentUser.uid).set(data); }
           catch(err){ console.error('Could not seed cloud progress:', err); }
           localStorage.setItem('italian-learn-progress', JSON.stringify(data));
+        } else if(!sameAccountAsLastSync){
+          // The cached local blob belongs to a different, previously-synced
+          // account and was refused above — clear it so a later load for
+          // this same new account can't later mistake it for its own data
+          // just because the uid marker below now matches.
+          localStorage.removeItem('italian-learn-progress');
         }
         localStorage.setItem('italian-learn-progress-uid', currentUser.uid);
       }
