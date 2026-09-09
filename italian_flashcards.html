@@ -519,7 +519,11 @@ if(firebaseReady){
 </script>
 
 <script>
-/* ---------- TEXT TO SPEECH (browser speech synthesis) ---------- */
+/* ---------- TEXT TO SPEECH ---------- */
+// Primary voice: Cloudflare Worker that proxies Google Translate's TTS (natural voice).
+// Fallback: the browser's built-in speech synthesis (works offline, robotic, device-dependent).
+const TTS_WORKER = 'https://italian-tts.theathleticphysio.workers.dev';
+
 let italianVoice = null;
 let voicesReady = false;
 function loadItalianVoice(){
@@ -565,11 +569,7 @@ function speakUtterance(clean){
     }
   }, 350);
 }
-function speakItalian(text){
-  if(!text) return;
-  // strip parenthetical hints and slashes for cleaner pronunciation, e.g. "adesso / ora" -> speak "adesso"
-  const clean = text.split('/')[0].replace(/\([^)]*\)/g, '').trim();
-  if(!clean) return;
+function speakWithBrowserVoice(clean){
   if(!('speechSynthesis' in window)){
     alert("Your browser doesn't support text-to-speech.");
     return;
@@ -583,6 +583,32 @@ function speakItalian(text){
   } else {
     speakUtterance(clean);
   }
+}
+function speakItalian(text){
+  if(!text) return;
+  // strip parenthetical hints and slashes for cleaner pronunciation, e.g. "adesso / ora" -> speak "adesso"
+  const clean = text.split('/')[0].replace(/\([^)]*\)/g, '').trim();
+  if(!clean) return;
+
+  // Google Translate voice is capped at 200 chars; longer strings only work in the browser voice.
+  if(!TTS_WORKER || clean.length > 200){
+    speakWithBrowserVoice(clean);
+    return;
+  }
+
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  const audio = new Audio(TTS_WORKER + '/?q=' + encodeURIComponent(clean));
+  let done = false;
+  const fallback = () => {
+    if(done) return;
+    done = true;
+    speakWithBrowserVoice(clean);
+  };
+  // If playback hasn't started shortly, assume the Worker is unreachable and fall back.
+  const timer = setTimeout(fallback, 2000);
+  audio.addEventListener('playing', () => { done = true; clearTimeout(timer); });
+  audio.addEventListener('error', () => { clearTimeout(timer); fallback(); });
+  audio.play().catch(() => { clearTimeout(timer); fallback(); });
 }
 function speakerButton(text, sizeClass){
   const btn = document.createElement('button');
