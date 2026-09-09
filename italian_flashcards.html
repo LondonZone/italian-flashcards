@@ -519,40 +519,70 @@ if(firebaseReady){
 </script>
 
 <script>
-/* ---------- TEXT TO SPEECH ---------- */
+/* ---------- TEXT TO SPEECH (browser speech synthesis) ---------- */
 let italianVoice = null;
+let voicesReady = false;
 function loadItalianVoice(){
   if(!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
-  italianVoice = voices.find(v => v.lang === 'it-IT') || voices.find(v => v.lang && v.lang.startsWith('it')) || null;
+  if(!voices.length) return;
+  voicesReady = true;
+  // Prefer an installed it-IT voice, then any Italian voice.
+  italianVoice =
+    voices.find(v => v.lang === 'it-IT' && v.localService) ||
+    voices.find(v => v.lang === 'it-IT') ||
+    voices.find(v => v.lang && v.lang.toLowerCase().startsWith('it')) ||
+    null;
 }
 if('speechSynthesis' in window){
   loadItalianVoice();
   window.speechSynthesis.onvoiceschanged = loadItalianVoice;
+  // Chrome bug: long utterances silently pause after ~15s. Nudge while speaking.
+  setInterval(() => {
+    const s = window.speechSynthesis;
+    if(s.speaking && !s.paused) s.resume();
+  }, 5000);
+}
+function speakUtterance(clean){
+  const synth = window.speechSynthesis;
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = 'it-IT';
+  if(italianVoice) utter.voice = italianVoice;
+  utter.rate = 0.9;
+  let started = false;
+  utter.onstart = () => { started = true; };
+  synth.speak(utter);
+  synth.resume(); // Chrome sometimes needs a kick right after speak()
+  // If nothing actually started, try once more (Chrome drops the first utterance in some states).
+  setTimeout(() => {
+    if(!started && !synth.speaking && !synth.pending){
+      const retry = new SpeechSynthesisUtterance(clean);
+      retry.lang = 'it-IT';
+      if(italianVoice) retry.voice = italianVoice;
+      retry.rate = 0.9;
+      synth.speak(retry);
+      synth.resume();
+    }
+  }, 350);
 }
 function speakItalian(text){
   if(!text) return;
   // strip parenthetical hints and slashes for cleaner pronunciation, e.g. "adesso / ora" -> speak "adesso"
   const clean = text.split('/')[0].replace(/\([^)]*\)/g, '').trim();
   if(!clean) return;
-
-  // Primary: Google Translate's TTS voice (more natural), works since you're online.
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(clean) + '&tl=it&client=tw-ob';
-  const audio = new Audio(url);
-  audio.onerror = () => speakItalianFallback(clean);
-  audio.play().catch(() => speakItalianFallback(clean));
-}
-function speakItalianFallback(clean){
   if(!('speechSynthesis' in window)){
-    alert("Couldn't reach the online voice, and your browser doesn't support offline text-to-speech either.");
+    alert("Your browser doesn't support text-to-speech.");
     return;
   }
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(clean);
-  utter.lang = 'it-IT';
-  if(italianVoice) utter.voice = italianVoice;
-  utter.rate = 0.9;
-  window.speechSynthesis.speak(utter);
+  if(!voicesReady) loadItalianVoice();
+  const synth = window.speechSynthesis;
+  // cancel() + speak() on the same tick makes Chrome drop the new utterance; defer it.
+  if(synth.speaking || synth.pending){
+    synth.cancel();
+    setTimeout(() => speakUtterance(clean), 140);
+  } else {
+    speakUtterance(clean);
+  }
 }
 function speakerButton(text, sizeClass){
   const btn = document.createElement('button');
