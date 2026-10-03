@@ -281,6 +281,11 @@
   .feedback.show{display:block;}
   .feedback.correct{background:#eef4ea; color:#3d5c3d;}
   .feedback.incorrect{background:#fbeae6; color:#8a3a28;}
+  .override-btn{
+    display:block; margin-top:8px; padding:4px 10px;
+    font-family:'Space Mono', monospace; font-size:11px;
+    background:transparent; color:inherit; border:1px solid currentColor; border-radius:4px; cursor:pointer;
+  }
   .feedback .correct-answer{font-weight:700; font-family:'Fraunces', serif;}
 
   .quiz-controls{display:flex; gap:10px;}
@@ -463,7 +468,7 @@
       <div class="score-badge" id="scoreBadge">0 / 0</div>
       <div class="quiz-sentence" id="quizSentence">Sentence with ___ here.</div>
       <div class="quiz-translation" id="quizTranslation">translation</div>
-      <input type="text" class="blank-input" id="blankInput" placeholder="type the missing word(s)..." autocomplete="off">
+      <input type="text" class="blank-input" id="blankInput" placeholder="type the missing word(s)..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div class="feedback" id="feedback"></div>
       <div class="quiz-controls">
         <button class="ctrl-btn secondary" id="checkBtn">Check</button>
@@ -1017,6 +1022,7 @@ function resetQuizOrder(){
 }
 function normalize(str){
   return str.toLowerCase().trim()
+    .replace(/[\u2018\u2019`]/g,"'").replace(/\s+/g,' ')
     .replace(/à/g,'a').replace(/è|é/g,'e').replace(/ì/g,'i').replace(/ò/g,'o').replace(/ù/g,'u')
     .replace(/[?.!,]/g,'');
 }
@@ -1131,16 +1137,21 @@ function makeMCOptions(correctIdx){
   const sameCatPool = DECK.map((c,i)=>i).filter(i => i !== correctIdx && DECK[i].cat === correctItem.cat);
   const otherPool = DECK.map((c,i)=>i).filter(i => i !== correctIdx && DECK[i].cat !== correctItem.cat && DECK[i].cat !== "Texting");
   let distractorIdxs = [];
-  const pool1 = [...sameCatPool];
-  while(distractorIdxs.length < 3 && pool1.length > 0){
-    const r = Math.floor(Math.random() * pool1.length);
-    distractorIdxs.push(pool1.splice(r,1)[0]);
-  }
-  const pool2 = [...otherPool];
-  while(distractorIdxs.length < 3 && pool2.length > 0){
-    const r = Math.floor(Math.random() * pool2.length);
-    distractorIdxs.push(pool2.splice(r,1)[0]);
-  }
+  // Skip distractors whose answer text matches the correct answer or another
+  // option (e.g. io/loro both "sono"), so no two buttons look identical.
+  const seen = new Set([normalize(correctItem.back)]);
+  const pick = (pool) => {
+    while(distractorIdxs.length < 3 && pool.length > 0){
+      const r = Math.floor(Math.random() * pool.length);
+      const idx = pool.splice(r,1)[0];
+      const key = normalize(DECK[idx].back);
+      if(seen.has(key)) continue;
+      seen.add(key);
+      distractorIdxs.push(idx);
+    }
+  };
+  pick([...sameCatPool]);
+  pick([...otherPool]);
   const options = [correctIdx, ...distractorIdxs].map(i => DECK[i].back);
   for(let i = options.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i+1));
@@ -1221,17 +1232,15 @@ function renderLearnCard(){
         <div class="learn-tag">${item.cat}</div>
         <div class="learn-qtype">Type the answer</div>
         <div class="learn-prompt">${item.front}</div>
-        <input type="text" class="blank-input" id="learnInput" placeholder="type in Italian..." autocomplete="off">
+        <input type="text" class="blank-input" id="learnInput" placeholder="type in Italian..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         <div class="feedback" id="learnFeedback"></div>
       </div>
       <div class="controls">
-        <button class="ctrl-btn secondary" id="learnCheckBtn">Check</button>
-        <button class="ctrl-btn" id="learnNextBtn" disabled>Next &rarr;</button>
+        <button class="ctrl-btn" id="learnNextBtn">Check</button>
       </div>
     `;
     const input = document.getElementById('learnInput');
     input.focus();
-    document.getElementById('learnCheckBtn').addEventListener('click', handleLearnType);
     input.addEventListener('keydown', (e) => {
       if(e.key === 'Enter'){
         if(!learnAnswered){ handleLearnType(); }
@@ -1239,8 +1248,13 @@ function renderLearnCard(){
       }
     });
   }
+  // On typed cards this one button checks first, then advances — so tapping
+  // it straight after typing never hits a disabled button.
   document.getElementById('learnNextBtn').addEventListener('click', () => {
-    if(!learnAnswered) return;
+    if(!learnAnswered){
+      if(learnCurrentType === "type") handleLearnType();
+      return;
+    }
     advanceLearnQueue();
   });
 }
@@ -1291,8 +1305,34 @@ function handleLearnType(){
   speakSlot2.style.marginLeft = '8px';
   speakSlot2.appendChild(speakerButton(item.it === "front" ? item.front : item.back, 'small'));
   feedback.appendChild(speakSlot2);
+  // Snapshot round state so an "I was right" override can undo the miss.
+  const before = {
+    queue: [...learnQueue],
+    pool: [...learnPool],
+    mastery: {...(learnMastery[learnCurrentIdx] || {streak:0})},
+  };
   registerLearnResult(isCorrect);
-  document.getElementById('learnNextBtn').disabled = false;
+  if(!isCorrect){
+    const override = document.createElement('button');
+    override.type = 'button';
+    override.className = 'override-btn';
+    override.textContent = 'I was right';
+    override.addEventListener('click', () => {
+      learnQueue = before.queue;
+      learnPool = before.pool;
+      learnMastery[learnCurrentIdx] = before.mastery;
+      registerLearnResult(true);
+      input.classList.replace('incorrect', 'correct');
+      feedback.classList.replace('incorrect', 'correct');
+      override.remove();
+      feedback.firstChild.textContent = 'Counted as correct — answer: ';
+      document.getElementById('learnNextBtn').focus();
+    });
+    feedback.appendChild(override);
+  }
+  const nextBtn = document.getElementById('learnNextBtn');
+  nextBtn.innerHTML = 'Next &rarr;';
+  nextBtn.focus();
 }
 
 function registerLearnResult(isCorrect){
