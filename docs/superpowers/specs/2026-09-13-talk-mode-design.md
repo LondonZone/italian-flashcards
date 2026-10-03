@@ -159,8 +159,13 @@ following the existing view-switching pattern (`#modeCardsBtn` etc. at
   bubble, corrections listed underneath the *user's* turn (not the
   assistant's) → pipe `reply_italian` through the existing TTS flow
   (Cloudflare Worker primary, `speechSynthesis` fallback — see
-  [[tts-cloudflare-worker]]) → reuse the existing tap-word-for-translation
-  behavior on both the transcript and the reply text.
+  [[tts-cloudflare-worker]]).
+  **Correction to original brief:** the brief asked to "reuse the existing
+  tap-word-for-translation behavior," but no such feature exists anywhere
+  in this codebase (confirmed by search during plan-writing) — there is
+  nothing to reuse. Tap-word translation is not built as part of this spec;
+  it would be new scope requiring its own design (translation source,
+  per-word lookup UI) and is deferred.
 - **"Start Over" button:** clears `conversations/{topicId}` in Firestore and
   resets in-memory history for that scenario.
 
@@ -198,5 +203,7 @@ iPhone for the `MediaRecorder` mime-type path, since that's the whole reason
 - Self-serve `generateScenario` Cloud Function.
 - Tagging scenarios with card categories to cross-link Talk mode and
   Flashcards mode.
+- Tap-word-for-translation on Talk mode text (no such feature exists
+  anywhere in the codebase to reuse — see correction note above).
 - Date filtering, charts, or trends in the Mistake Tracker beyond a sorted
   count list.
