@@ -406,7 +406,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Lezioni 1&ndash;3 &middot; A1</div>
+    <div class="eyebrow">Lezioni 1&ndash;5 &middot; A1</div>
     <h1>Italiano con David</h1>
     <div class="sub">Flashcards, fill-in-the-blank, and Learn mode &mdash; straight from your lesson notes.</div>
     <div class="stamp">POSTA<br>ITALIANA</div>
@@ -820,6 +820,31 @@ const DECK = [
   {cat:"Phrases", front:"Where in Italy (are you from)?", back:"Di dove in Italia?", note:"natural follow-up to 'Di dove sei?'"},
   {cat:"Phrases", front:"How old is she?", back:"Quanti anni ha?", note:"3rd person version of 'Quanti anni hai?' — uses ha, not hai"},
   {cat:"Phrases", front:"She is 29 years old.", back:"Ha ventinove anni.", note:"same pattern as 'Ho trent'anni' but 3rd person"},
+  {cat:"Question Words", front:"Chi?", back:"Who?", note:"Chi sei? — who are you?", it:"front"},
+  {cat:"Question Words", front:"Che? / Cosa? / Che cosa?", back:"What?", note:"all three mean the same thing, used interchangeably", it:"front"},
+  {cat:"Question Words", front:"Dove?", back:"Where?", note:"Dove abiti? — where do you live?", it:"front"},
+  {cat:"Question Words", front:"Quando?", back:"When?", note:"Quando vai in Italia? — when are you going to Italy?", it:"front"},
+  {cat:"Question Words", front:"Perché?", back:"Why?", note:"same word also means 'because' — context tells them apart", it:"front"},
+  {cat:"Question Words", front:"Come?", back:"How?", note:"Come stai? — how are you?", it:"front"},
+  {cat:"Question Words", front:"Quanto? / Quanta? / Quanti? / Quante?", back:"How much? / How many?", note:"changes with the gender and number of the noun", it:"front"},
+  {cat:"Question Words", front:"Quale? / Quali?", back:"Which? / What?", note:"Qual è — no apostrophe, even though it looks like it should have one", it:"front"},
+
+  {cat:"Question Words", front:"Who is it?", back:"Chi è?", note:""},
+  {cat:"Question Words", front:"Who speaks English?", back:"Chi parla inglese?", note:""},
+  {cat:"Question Words", front:"What do you study?", back:"Che cosa studi?", note:""},
+  {cat:"Question Words", front:"What do you do in your free time?", back:"Cosa fai nel tempo libero?", note:""},
+  {cat:"Question Words", front:"Where is the bathroom?", back:"Dov'è il bagno?", note:"Dov'è = Dove + è"},
+  {cat:"Question Words", front:"Where were you born?", back:"Dove sei nato?", note:"essere + nato — a preview of past tense"},
+  {cat:"Question Words", front:"When is your birthday?", back:"Quando è il tuo compleanno?", note:""},
+  {cat:"Question Words", front:"When does the lesson start?", back:"Quando comincia la lezione?", note:""},
+  {cat:"Question Words", front:"Why do you study Italian?", back:"Perché studi l'italiano?", note:""},
+  {cat:"Question Words", front:"How is the weather today?", back:"Com'è il tempo oggi?", note:"Com'è = Come + è"},
+  {cat:"Question Words", front:"How much does it cost?", back:"Quanto costa?", note:""},
+  {cat:"Question Words", front:"How many people are there?", back:"Quante persone ci sono?", note:"ci sono = 'there are'"},
+  {cat:"Question Words", front:"What is your phone number?", back:"Qual è il tuo numero di telefono?", note:""},
+  {cat:"Question Words", front:"Which food do you prefer?", back:"Quale cibo preferisci?", note:""},
+  {cat:"Question Words", front:"What are your hobbies?", back:"Quali sono i tuoi hobby?", note:""},
+  {cat:"Question Words", front:"Which pizza do you prefer, Margherita or Marinara?", back:"Quale pizza preferisci, Margherita o Marinara?", note:""},
 ];
 
 /* ---------- FILL-IN-THE-BLANK SENTENCES ---------- */
@@ -927,6 +952,14 @@ const SENTENCES = [
   {cat:"-ire verbs", text:"I miei amici ___ oggi per le vacanze.", translation:"My friends leave today for vacation. (partire)", answer:["partono"]},
   {cat:"Phrases", text:"Lei è ___?", translation:"Is she Italian?", answer:["italiana"]},
   {cat:"Phrases", text:"___ anni ha?", translation:"How old is she?", answer:["quanti"]},
+  {cat:"Question Words", text:"___ sei?", translation:"Who are you?", answer:["chi"]},
+  {cat:"Question Words", text:"___ fai nel tempo libero?", translation:"What do you do in your free time?", answer:["cosa","che cosa","che"]},
+  {cat:"Question Words", text:"___ abiti?", translation:"Where do you live?", answer:["dove"]},
+  {cat:"Question Words", text:"___ è il tuo compleanno?", translation:"When is your birthday?", answer:["quando"]},
+  {cat:"Question Words", text:"___ studi l'italiano?", translation:"Why do you study Italian?", answer:["perché","perche"]},
+  {cat:"Question Words", text:"___ stai?", translation:"How are you?", answer:["come"]},
+  {cat:"Question Words", text:"___ costa questo libro?", translation:"How much does this book cost?", answer:["quanto"]},
+  {cat:"Question Words", text:"___ è il tuo numero di telefono?", translation:"What is your phone number?", answer:["qual"]},
 ];
 
 /* ---------- SHARED STATE ---------- */
