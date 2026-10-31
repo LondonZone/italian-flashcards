@@ -938,6 +938,64 @@ const DECK = [
   {cat:"Phrases", front:"I'm eating pistachios.", back:"Mangio pistacchi.", note:""},
   {cat:"Phrases", front:"How old is your wife?", back:"Quanti anni ha tua moglie?", note:"no article: tua moglie"},
   {cat:"Phrases", front:"She is 42.", back:"Ha 42 anni.", note:"avere + number + anni"},
+
+  // ---- -are verbs: amare, nuotare, guardare, lavorare (vocab) ----
+  {cat:"-are verbs", front:"amare", back:"to love", note:"io amo, tu ami, lei ama, noi amiamo, voi amate, loro amano", it:"front"},
+  {cat:"-are verbs", front:"io ___ (amare)", back:"amo", note:"I love: the -o ending"},
+  {cat:"-are verbs", front:"tu ___ (amare)", back:"ami", note:"you love: the -i ending"},
+  {cat:"-are verbs", front:"lui/lei ___ (amare)", back:"ama", note:"he/she loves: the -a ending"},
+  {cat:"-are verbs", front:"noi ___ (amare)", back:"amiamo", note:"we love: the -iamo ending"},
+  {cat:"-are verbs", front:"voi ___ (amare)", back:"amate", note:"you guys love: the -ate ending"},
+  {cat:"-are verbs", front:"loro ___ (amare)", back:"amano", note:"they love: the -ano ending"},
+  {cat:"-are verbs", front:"nuotare", back:"to swim", note:"io nuoto bene, tu nuoti", it:"front"},
+  {cat:"-are verbs", front:"I swim well.", back:"Io nuoto bene.", note:"bene = well"},
+  {cat:"-are verbs", front:"guardare", back:"to watch / to look at", note:"noi guardiamo = we watch", it:"front"},
+  {cat:"-are verbs", front:"noi ___ (guardare)", back:"guardiamo", note:"we watch: the -iamo ending"},
+  {cat:"-are verbs", front:"lavorare", back:"to work", note:"verb: io lavoro, tu lavori", it:"front"},
+  {cat:"-are verbs", front:"il lavoro", back:"work (the job / the place)", note:"noun: lavorare is the verb, il lavoro is the thing", it:"front"},
+
+  // ---- -ere verbs: correre full table, bere completed ----
+  {cat:"-ere verbs", front:"io ___ (correre)", back:"corro", note:"I run"},
+  {cat:"-ere verbs", front:"tu ___ (correre)", back:"corri", note:"you run"},
+  {cat:"-ere verbs", front:"lui/lei ___ (correre)", back:"corre", note:"he/she runs: -e for -ere verbs"},
+  {cat:"-ere verbs", front:"noi ___ (correre)", back:"corriamo", note:"we run: the -iamo ending"},
+  {cat:"-ere verbs", front:"voi ___ (correre)", back:"correte", note:"you guys run: -ete, not -ate"},
+  {cat:"-ere verbs", front:"loro ___ (correre)", back:"corrono", note:"they run: -ono for -ere verbs"},
+  {cat:"-ere verbs", front:"noi ___ (bere)", back:"beviamo", note:"we drink"},
+  {cat:"-ere verbs", front:"voi ___ (bere)", back:"bevete", note:"you guys drink"},
+  {cat:"-ere verbs", front:"loro ___ (bere)", back:"bevono", note:"they drink"},
+
+  // ---- -ire verbs: venire (irregular, voi form is regular) ----
+  {cat:"-ire verbs", front:"venire", back:"to come", note:"irregular: io vengo, tu vieni, lei viene, noi veniamo, voi venite, loro vengono", it:"front"},
+  {cat:"-ire verbs", front:"voi ___ (venire)", back:"venite", note:"you guys come: the -ite ending"},
+
+  // ---- Sapere (new category) ----
+  {cat:"Sapere", front:"sapere", back:"to know (a fact / how to)", note:"irregular: so, sai, sa, sappiamo, sapete, sanno", it:"front"},
+  {cat:"Sapere", front:"io ___ (sapere)", back:"so", note:"I know"},
+  {cat:"Sapere", front:"tu ___ (sapere)", back:"sai", note:"you know"},
+  {cat:"Sapere", front:"lui/lei ___ (sapere)", back:"sa", note:"he/she knows"},
+  {cat:"Sapere", front:"noi ___ (sapere)", back:"sappiamo", note:"we know"},
+  {cat:"Sapere", front:"voi ___ (sapere)", back:"sapete", note:"you guys know"},
+  {cat:"Sapere", front:"loro ___ (sapere)", back:"sanno", note:"they know"},
+  {cat:"Sapere", front:"I know it.", back:"Lo so.", note:"lo = it"},
+  {cat:"Sapere", front:"You know that I love you.", back:"Tu sai che ti amo.", note:"sai che = you know that"},
+  {cat:"Sapere", front:"Who knows?", back:"Chi lo sa?", note:"fixed expression"},
+
+  // ---- Avere: expressions from lingua.com ----
+  {cat:"Avere", front:"I'm scared.", back:"Ho paura.", note:"avere paura, like avere fame"},
+  {cat:"Avere", front:"You're right.", back:"Hai ragione.", note:"avere ragione = to be right"},
+  {cat:"Avere", front:"They are ten years old.", back:"Hanno dieci anni.", note:"age uses avere"},
+  {cat:"Avere", front:"I need more time.", back:"Ho bisogno di più tempo.", note:"avere bisogno di + noun or infinitive"},
+  {cat:"Avere", front:"Don't you guys have the keys?", back:"Voi non avete le chiavi?", note:"non goes before the verb"},
+  {cat:"Avere", front:"We have a big garden.", back:"Noi abbiamo un giardino grande.", note:"adjective after the noun"},
+
+  // ---- Andare / Fare / Question Words / Phrases ----
+  {cat:"Andare", front:"I'm going to work.", back:"Vado a lavorare.", note:"andare a + infinitive"},
+  {cat:"Fare", front:"We're making a trio.", back:"Facciamo un trio.", note:"noi facciamo = we do / we make"},
+  {cat:"Question Words", front:"Who's speaking?", back:"Chi parla?", note:"what you say when answering an unknown call"},
+  {cat:"Phrases", front:"Let's hope so.", back:"Speriamo.", note:"noi form of sperare"},
+  {cat:"Phrases", front:"Maybe. / I wish!", back:"Magari.", note:"meaning depends on tone and context"},
+  {cat:"Phrases", front:"God willing.", back:"Dio voglia.", note:"fixed phrase"},
 ];
 
 /* ---------- FILL-IN-THE-BLANK SENTENCES ---------- */
@@ -1082,6 +1140,20 @@ const SENTENCES = [
   {cat:"-ere verbs", text:"Tu mangi e ___.", translation:"You eat and you drink. (bere)", answer:["bevi"]},
   {cat:"Possessives", text:"Dove abita ___ padre?", translation:"Where does your father live?", answer:["tuo"]},
   {cat:"Phrases", text:"Sono ___ lavoro.", translation:"I'm at work. (al = a + il)", answer:["al"]},
+
+  {cat:"-are verbs", text:"Tu ___ la musica.", translation:"You love music. (amare)", answer:["ami"]},
+  {cat:"-are verbs", text:"Io ___ bene.", translation:"I swim well. (nuotare)", answer:["nuoto"]},
+  {cat:"-are verbs", text:"Noi ___ un film.", translation:"We watch a movie. (guardare)", answer:["guardiamo"]},
+  {cat:"-ere verbs", text:"Tu ___ ogni giorno?", translation:"Do you run every day? (correre)", answer:["corri"]},
+  {cat:"-ere verbs", text:"Voi ___ troppo.", translation:"You guys run too much. (correre)", answer:["correte"]},
+  {cat:"-ere verbs", text:"Noi ___ acqua.", translation:"We drink water. (bere)", answer:["beviamo"]},
+  {cat:"-ire verbs", text:"Voi ___ con noi?", translation:"Are you guys coming with us? (venire)", answer:["venite"]},
+  {cat:"Sapere", text:"Tu ___ che ti amo.", translation:"You know that I love you. (sapere)", answer:["sai"]},
+  {cat:"Sapere", text:"Io lo ___.", translation:"I know it. (sapere)", answer:["so"]},
+  {cat:"Sapere", text:"Noi non ___ cosa fare.", translation:"We don't know what to do. (sapere)", answer:["sappiamo"]},
+  {cat:"Avere", text:"Io ___ paura.", translation:"I'm scared. (avere)", answer:["ho"]},
+  {cat:"Avere", text:"Tu ___ ragione.", translation:"You're right. (avere)", answer:["hai"]},
+  {cat:"Avere", text:"Noi ___ un giardino grande.", translation:"We have a big garden. (avere)", answer:["abbiamo"]},
 ];
 
 /* ---------- SHARED STATE ---------- */
