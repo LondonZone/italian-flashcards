@@ -1529,6 +1529,9 @@ function renderLearnCard(){
     input.focus();
     input.addEventListener('keydown', (e) => {
       if(e.key === 'Enter'){
+        // handleLearnType moves focus to the Next button; without this the
+        // same Enter press then "clicks" it and skips past the feedback.
+        e.preventDefault();
         if(!learnAnswered){ handleLearnType(); }
         else { advanceLearnQueue(); }
       }
