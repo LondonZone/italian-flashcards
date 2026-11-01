@@ -427,6 +427,9 @@
     text-align:left; font-family:'Fraunces', serif; font-weight:600;
     color:var(--navy); font-size:14px; padding-bottom:4px;
   }
+  .endings-note{font-size:11.5px; color:#4a5b68; line-height:1.6; margin-top:6px;}
+  .endings-note:empty{display:none;}
+  .endings-note b{white-space:nowrap;}
   .mixer-table-wrap{margin-bottom:12px;}
   .mixer-ending{background:rgba(201,133,43,0.28); border-radius:2px; padding:0 1px;}
   .mixer-stats{font-size:11px; color:#5a6b78; margin-bottom:16px; line-height:1.7;}
@@ -531,11 +534,13 @@
 
   <!-- VERB MIXER MODE -->
   <div id="mixerMode" style="display:none;">
+    <div class="filters" id="mixerTenseFilters"></div>
     <div class="filters" id="mixerSetFilters"></div>
 
     <details class="endings-box" id="endingsBox" open>
-      <summary>Present tense endings</summary>
+      <summary id="endingsTitle">Present tense endings</summary>
       <table class="conj-table" id="endingsTable"></table>
+      <div class="endings-note" id="endingsNote"></div>
     </details>
 
     <div class="mixer-stats" id="mixerStats"></div>
@@ -1899,7 +1904,8 @@ async function resetLearnProgress(){
 }
 /* ---------- VERB MIXER ---------- */
 // Drills the conjugation pattern rather than single cards: a random
-// person + verb, type the form. Accuracy is tracked per person.
+// person + verb, type the form. Present tense or passato prossimo.
+// Accuracy is tracked per person, separately for each tense.
 const MIXER_PERSONS = ["io", "tu", "lui/lei", "noi", "voi", "loro"];
 const MIXER_ENDINGS = {
   are: ["o", "i", "a", "iamo", "ate", "ano"],
@@ -1944,51 +1950,108 @@ const MIXER_IRREGULAR = [
   {inf:"bere", en:"to drink", forms:["bevo", "bevi", "beve", "beviamo", "bevete", "bevono"]},
 ];
 
-// Each form is {stem, ending} so the ending can be highlighted.
+// Passato prossimo = avere/essere (present) + past participle.
+const MIXER_PARTICIPLE_ENDINGS = {are: "ato", ere: "uto", ire: "ito"};
+// Participles that don't follow -ato / -uto / -ito from the infinitive stem.
+const MIXER_PAST_IRREGULAR = {
+  vivere:"vissuto", correre:"corso", scrivere:"scritto", prendere:"preso", leggere:"letto",
+  chiudere:"chiuso", vedere:"visto", aprire:"aperto", essere:"stato", fare:"fatto",
+  bere:"bevuto", venire:"venuto",
+};
+// These take essere, and the participle agrees with the subject:
+// -o/-a in the singular, -i/-e in the plural (sono tornato/a, siamo tornati/e).
+const MIXER_ESSERE_VERBS = ["tornare", "partire", "andare", "venire", "essere"];
+const MIXER_AUX = {
+  avere: ["ho", "hai", "ha", "abbiamo", "avete", "hanno"],
+  essere: ["sono", "sei", "è", "siamo", "siete", "sono"],
+};
+
+// Each form is {stem, ending, answers}: stem + highlighted ending for display,
+// answers = every accepted spelling (first one is read aloud).
+function makeForm(stem, ending){
+  return {stem, ending, answers: [stem + ending]};
+}
 function conjugateRegular(inf){
   const stem = inf.slice(0, -3);
   return MIXER_ENDINGS[inf.slice(-3)].map(ending => {
     // -iare verbs (studiare, mangiare) don't double the i: tu studi, noi studiamo.
     const s = (stem.endsWith('i') && ending.startsWith('i')) ? stem.slice(0, -1) : stem;
-    return {stem: s, ending};
+    return makeForm(s, ending);
   });
 }
-// Irregulars: highlight the regular ending where the form still has it
-// (vad-o, and-iamo), otherwise the whole form (è, sa, vanno).
+// Highlight `ending` if the word still has it (vad-o, bev-uto), otherwise the whole word (è, vanno, fatto).
+function splitOnEnding(word, ending){
+  return (word.endsWith(ending) && word.length > ending.length)
+    ? {stem: word.slice(0, -ending.length), ending}
+    : {stem: "", ending: word};
+}
 function splitIrregular(inf, forms){
   const endings = MIXER_ENDINGS[inf.slice(-3)];
-  return forms.map((f, i) => (f.endsWith(endings[i]) && f.length > endings[i].length)
-    ? {stem: f.slice(0, -endings[i].length), ending: endings[i]}
-    : {stem: "", ending: f});
+  return forms.map((f, i) => {
+    const {stem, ending} = splitOnEnding(f, endings[i]);
+    return makeForm(stem, ending);
+  });
 }
+function conjugatePast(inf){
+  const type = inf.slice(-3);
+  const ruleParticiple = inf.slice(0, -3) + MIXER_PARTICIPLE_ENDINGS[type];
+  const participle = MIXER_PAST_IRREGULAR[inf] || ruleParticiple;
+  const withEssere = MIXER_ESSERE_VERBS.includes(inf);
+  const aux = MIXER_AUX[withEssere ? 'essere' : 'avere'];
+  const split = splitOnEnding(participle, MIXER_PARTICIPLE_ENDINGS[type]);
+  const forms = aux.map((a, i) => {
+    if(!withEssere) return makeForm(`${a} ${split.stem}`, split.ending);
+    const plural = i >= 3;
+    const base = participle.slice(0, -1);
+    const [m, f] = plural ? ['i', 'e'] : ['o', 'a'];
+    // Show "tornato/a" with the agreeing ending highlighted; accept either gender.
+    const shown = split.stem
+      ? {stem: split.stem, ending: split.ending.slice(0, -1) + `${m}/${f}`}
+      : {stem: "", ending: `${base}${m}/${f}`};
+    return {stem: `${a} ${shown.stem}`, ending: shown.ending, answers: [`${a} ${base}${m}`, `${a} ${base}${f}`]};
+  });
+  return {forms, regular: participle === ruleParticiple};
+}
+
+const MIXER_ALL_INFINITIVES = [...MIXER_REGULAR, ...MIXER_IRREGULAR];
+const MIXER_PAST_VERBS = MIXER_ALL_INFINITIVES.map(v => ({inf: v.inf, en: v.en, ...conjugatePast(v.inf)}));
+// Present: regular/irregular by the present forms. Past: by the participle.
 const MIXER_VERBS = {
-  regular: MIXER_REGULAR.map(v => ({...v, forms: conjugateRegular(v.inf)})),
-  irregular: MIXER_IRREGULAR.map(v => ({...v, forms: splitIrregular(v.inf, v.forms)})),
+  present: {
+    regular: MIXER_REGULAR.map(v => ({...v, forms: conjugateRegular(v.inf)})),
+    irregular: MIXER_IRREGULAR.map(v => ({...v, forms: splitIrregular(v.inf, v.forms)})),
+  },
+  past: {
+    regular: MIXER_PAST_VERBS.filter(v => v.regular),
+    irregular: MIXER_PAST_VERBS.filter(v => !v.regular),
+  },
 };
 
-const MIXER_STATS_KEY = 'italian-mixer-stats';
+const MIXER_STATS_KEYS = {present: 'italian-mixer-stats', past: 'italian-mixer-stats-past'};
 const MIXER_ENDINGS_OPEN_KEY = 'italian-mixer-endings-open';
-let mixerSet = "regular"; // "regular" | "irregular" | "mixed"
-let mixerQ = null;        // {verb, p} where p indexes MIXER_PERSONS
+let mixerTense = "present"; // "present" | "past"
+let mixerSet = "regular";   // "regular" | "irregular" | "mixed"
+let mixerQ = null;          // {verb, p, tense} where p indexes MIXER_PERSONS
 let mixerChecked = false;
 let mixerScore = 0;
 let mixerAttempted = 0;
-let mixerStats = loadMixerStats(); // person -> {right, total}
+// tense -> person -> {right, total}
+let mixerStats = {present: loadMixerStats('present'), past: loadMixerStats('past')};
 
-function loadMixerStats(){
+function loadMixerStats(tense){
   try{
-    const raw = JSON.parse(localStorage.getItem(MIXER_STATS_KEY));
+    const raw = JSON.parse(localStorage.getItem(MIXER_STATS_KEYS[tense]));
     if(raw && typeof raw === 'object') return raw;
   }catch(err){
     // storage blocked or malformed: start fresh
   }
   return {};
 }
-function saveMixerStats(){
-  try{ localStorage.setItem(MIXER_STATS_KEY, JSON.stringify(mixerStats)); }catch(err){}
+function saveMixerStats(tense){
+  try{ localStorage.setItem(MIXER_STATS_KEYS[tense], JSON.stringify(mixerStats[tense])); }catch(err){}
 }
-function personStat(person){
-  const s = mixerStats[person] || {};
+function personStat(person, tense = mixerTense){
+  const s = mixerStats[tense][person] || {};
   return {right: s.right || 0, total: s.total || 0};
 }
 // Lowest accuracy among persons with at least 3 attempts, if below 100%.
@@ -2014,42 +2077,60 @@ function pickMixerPerson(){
 }
 function pickMixerVerb(){
   const kind = mixerSet === "mixed" ? (Math.random() < 0.5 ? "regular" : "irregular") : mixerSet;
-  const pool = MIXER_VERBS[kind];
+  const pool = MIXER_VERBS[mixerTense][kind];
   return pool[Math.floor(Math.random() * pool.length)];
 }
 function mixerFormHTML(form){
   return `${form.stem}<b class="mixer-ending">${form.ending}</b>`;
 }
-function mixerFormText(form){
-  return form.stem + form.ending;
-}
-// Accept the bare form, or the form typed with its pronoun ("noi corriamo").
-function mixerAnswerMatches(value, p, answer){
+// Accept any listed answer, bare or typed with its pronoun ("noi corriamo").
+function mixerAnswerMatches(value, p, answers){
   let v = normalize(value);
   const pronouns = MIXER_PERSONS[p].split('/');
   for(const pr of pronouns){
     if(v.startsWith(pr + ' ')){ v = v.slice(pr.length + 1); break; }
   }
-  return v === normalize(answer);
+  return answers.some(a => normalize(a) === v);
 }
 
-function buildMixerSetFilters(){
-  const el = document.getElementById('mixerSetFilters');
-  el.innerHTML = "";
-  [["regular", "Regular"], ["irregular", "Irregular"], ["mixed", "Mixed"]].forEach(([key, label]) => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn' + (key === mixerSet ? ' active' : '');
-    btn.textContent = label;
-    btn.onclick = () => { mixerSet = key; buildMixerSetFilters(); nextMixerQuestion(); };
-    el.appendChild(btn);
-  });
+function buildMixerFilters(){
+  const make = (elId, options, current, onPick) => {
+    const el = document.getElementById(elId);
+    el.innerHTML = "";
+    options.forEach(([key, label]) => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn' + (key === current ? ' active' : '');
+      btn.textContent = label;
+      btn.onclick = () => { onPick(key); buildMixerFilters(); nextMixerQuestion(); };
+      el.appendChild(btn);
+    });
+  };
+  make('mixerTenseFilters', [["present", "Present"], ["past", "Past (passato prossimo)"]], mixerTense,
+    key => { mixerTense = key; renderEndingsTable(); });
+  make('mixerSetFilters', [["regular", "Regular"], ["irregular", "Irregular"], ["mixed", "Mixed"]], mixerSet,
+    key => { mixerSet = key; });
 }
-function buildEndingsTable(){
-  const rows = MIXER_PERSONS.map((person, i) =>
-    `<tr><td>${person}</td><td>-${MIXER_ENDINGS.are[i]}</td><td>-${MIXER_ENDINGS.ere[i]}</td><td>-${MIXER_ENDINGS.ire[i]}</td></tr>`
-  ).join('');
-  document.getElementById('endingsTable').innerHTML =
-    `<thead><tr><th></th><th>-are</th><th>-ere</th><th>-ire</th></tr></thead><tbody>${rows}</tbody>`;
+function renderEndingsTable(){
+  const table = document.getElementById('endingsTable');
+  const note = document.getElementById('endingsNote');
+  if(mixerTense === "present"){
+    document.getElementById('endingsTitle').textContent = 'Present tense endings';
+    const rows = MIXER_PERSONS.map((person, i) =>
+      `<tr><td>${person}</td><td>-${MIXER_ENDINGS.are[i]}</td><td>-${MIXER_ENDINGS.ere[i]}</td><td>-${MIXER_ENDINGS.ire[i]}</td></tr>`
+    ).join('');
+    table.innerHTML = `<thead><tr><th></th><th>-are</th><th>-ere</th><th>-ire</th></tr></thead><tbody>${rows}</tbody>`;
+    note.textContent = '';
+  } else {
+    document.getElementById('endingsTitle').textContent = 'Past: avere / essere + participle';
+    const rows = MIXER_PERSONS.map((person, i) =>
+      `<tr><td>${person}</td><td>${MIXER_AUX.avere[i]}</td><td>${MIXER_AUX.essere[i]}</td></tr>`
+    ).join('');
+    table.innerHTML = `<thead><tr><th></th><th>avere</th><th>essere</th></tr></thead><tbody>${rows}</tbody>`;
+    note.innerHTML = 'Participle: -are &rarr; <b>-ato</b>, -ere &rarr; <b>-uto</b>, -ire &rarr; <b>-ito</b>.<br>' +
+      `Essere verbs (${MIXER_ESSERE_VERBS.join(', ')}): the ending agrees, <b>-o/-a</b> singular, <b>-i/-e</b> plural.`;
+  }
+}
+function setupEndingsBox(){
   const box = document.getElementById('endingsBox');
   try{
     if(localStorage.getItem(MIXER_ENDINGS_OPEN_KEY) === 'false') box.open = false;
@@ -2057,6 +2138,7 @@ function buildEndingsTable(){
   box.addEventListener('toggle', () => {
     try{ localStorage.setItem(MIXER_ENDINGS_OPEN_KEY, String(box.open)); }catch(err){}
   });
+  renderEndingsTable();
 }
 function renderMixerStats(){
   const weak = weakestPerson();
@@ -2066,16 +2148,17 @@ function renderMixerStats(){
     const cls = person === weak ? ' class="weak"' : '';
     return `<span${cls} title="${s.right} of ${s.total} right">${person} ${pct}</span>`;
   });
+  const label = mixerTense === "present" ? 'Present accuracy' : 'Past accuracy';
   document.getElementById('mixerStats').innerHTML =
-    'Accuracy: ' + parts.join(' &middot; ') + (weak ? ` <span class="weak">(${weak} comes up more)</span>` : '');
+    `${label}: ` + parts.join(' &middot; ') + (weak ? ` <span class="weak">(${weak} comes up more)</span>` : '');
 }
 function nextMixerQuestion(){
   const prev = mixerQ;
   let q;
   // Avoid asking the exact same verb + person twice in a row.
   do{
-    q = {verb: pickMixerVerb(), p: pickMixerPerson()};
-  } while(prev && q.verb.inf === prev.verb.inf && q.p === prev.p);
+    q = {verb: pickMixerVerb(), p: pickMixerPerson(), tense: mixerTense};
+  } while(prev && prev.tense === q.tense && q.verb.inf === prev.verb.inf && q.p === prev.p);
   mixerQ = q;
   renderMixer();
 }
@@ -2089,9 +2172,10 @@ function renderMixer(){
   document.getElementById('mixerTable').innerHTML = "";
   mixerChecked = false;
 
-  const {verb, p} = mixerQ;
+  const {verb, p, tense} = mixerQ;
   document.getElementById('mixerPrompt').textContent = `${MIXER_PERSONS[p]} + ${verb.inf}`;
-  document.getElementById('mixerMeaning').textContent = `(${verb.en})`;
+  document.getElementById('mixerMeaning').textContent =
+    tense === "past" ? `(${verb.en}) · past` : `(${verb.en})`;
   document.getElementById('mixerScore').textContent = `${mixerScore} / ${mixerAttempted}`;
   renderMixerStats();
   if(mode === 'mixer') input.focus();
@@ -2103,24 +2187,23 @@ function renderMixerTable(verb, missed){
   document.getElementById('mixerTable').innerHTML =
     `<table class="conj-table"><caption>${verb.inf} (${verb.en})</caption><tbody>${rows}</tbody></table>`;
 }
-function recordMixerResult(person, rightDelta, totalDelta){
-  const s = personStat(person);
-  mixerStats[person] = {right: s.right + rightDelta, total: s.total + totalDelta};
-  saveMixerStats();
+function recordMixerResult(tense, person, rightDelta, totalDelta){
+  const s = personStat(person, tense);
+  mixerStats[tense][person] = {right: s.right + rightDelta, total: s.total + totalDelta};
+  saveMixerStats(tense);
 }
 function checkMixer(){
   if(mixerChecked) return;
   const input = document.getElementById('mixerInput');
   if(!input.value.trim()) return;
-  const {verb, p} = mixerQ;
+  const {verb, p, tense} = mixerQ;
   const person = MIXER_PERSONS[p];
   const form = verb.forms[p];
-  const answer = mixerFormText(form);
-  const isCorrect = mixerAnswerMatches(input.value, p, answer);
+  const isCorrect = mixerAnswerMatches(input.value, p, form.answers);
   mixerChecked = true;
   mixerAttempted++;
   if(isCorrect) mixerScore++;
-  recordMixerResult(person, isCorrect ? 1 : 0, 1);
+  recordMixerResult(tense, person, isCorrect ? 1 : 0, 1);
   document.getElementById('mixerScore').textContent = `${mixerScore} / ${mixerAttempted}`;
   renderMixerStats();
 
@@ -2131,7 +2214,7 @@ function checkMixer(){
     `<span class="correct-answer">${person} ${mixerFormHTML(form)}</span>`;
   const speakSlot = document.createElement('span');
   speakSlot.style.marginLeft = '8px';
-  speakSlot.appendChild(speakerButton(answer, 'small'));
+  speakSlot.appendChild(speakerButton(form.answers[0], 'small'));
   feedback.appendChild(speakSlot);
 
   if(!isCorrect){
@@ -2142,7 +2225,7 @@ function checkMixer(){
     override.textContent = 'I was right';
     override.addEventListener('click', () => {
       mixerScore++;
-      recordMixerResult(person, 1, 0);
+      recordMixerResult(tense, person, 1, 0);
       document.getElementById('mixerScore').textContent = `${mixerScore} / ${mixerAttempted}`;
       renderMixerStats();
       input.classList.replace('incorrect', 'correct');
@@ -2158,6 +2241,7 @@ document.getElementById('mixerCheckBtn').addEventListener('click', checkMixer);
 document.getElementById('mixerNextBtn').addEventListener('click', nextMixerQuestion);
 document.getElementById('mixerInput').addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){
+    e.preventDefault();
     if(!mixerChecked){ checkMixer(); } else { nextMixerQuestion(); }
   }
 });
@@ -2193,7 +2277,7 @@ document.getElementById('modeLearnBtn').addEventListener('click', async () => {
 /* INIT */
 resetOrder(); buildFilters(); render();
 resetQuizOrder(); buildQuizFilters(); renderQuiz();
-buildMixerSetFilters(); buildEndingsTable(); nextMixerQuestion();
+buildMixerFilters(); setupEndingsBox(); nextMixerQuestion();
 </script>
 </body>
 </html>
