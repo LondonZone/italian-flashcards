@@ -1118,6 +1118,58 @@ const DECK = [
   {cat:"Prepositions", front:"I'm staying for two days.", back:"Resto per due giorni.", note:"per = duration"},
   {cat:"Prepositions", front:"I'll arrive in 10 minutes.", back:"Arrivo tra dieci minuti.", note:"tra/fra = in (future time)"},
   {cat:"Prepositions", front:"The chair is between the table and the wall.", back:"La sedia è tra il tavolo e il muro.", note:""},
+
+  // ---- Piacere (new category) ----
+  {cat:"Piacere", front:"I like pizza.", back:"Mi piace la pizza.", note:"piace: one thing"},
+  {cat:"Piacere", front:"I like peaches.", back:"Mi piacciono le pesche.", note:"piacciono: more than one thing"},
+  {cat:"Piacere", front:"I like studying Italian.", back:"Mi piace studiare l'italiano.", note:"piace + infinitive, always singular"},
+  {cat:"Piacere", front:"Do you like Italian?", back:"Ti piace l'italiano?", note:"ti piace = do you like"},
+  {cat:"Piacere", front:"Do you like fish?", back:"Ti piace il pesce?", note:""},
+  {cat:"Piacere", front:"I don't like fish.", back:"Non mi piace il pesce.", note:"non goes before mi"},
+  {cat:"Piacere", front:"Do you like beef?", back:"Ti piace la carne di manzo?", note:""},
+  {cat:"Piacere", front:"Yes, I like beef.", back:"Sì, mi piace la carne di manzo.", note:""},
+  {cat:"Piacere", front:"No, I don't like it.", back:"No, non mi piace.", note:""},
+  {cat:"Piacere", front:"She likes", back:"(a lei) le piace", note:"a lei is optional, for emphasis"},
+  {cat:"Piacere", front:"He likes", back:"(a lui) gli piace", note:"a lui is optional, for emphasis"},
+  {cat:"Piacere", front:"He likes the sea.", back:"Gli piace il mare.", note:""},
+  {cat:"Piacere", front:"She likes fishing.", back:"Le piace la pesca.", note:"la pesca = fishing AND peach"},
+
+  // ---- Food (new category) ----
+  {cat:"Food", front:"la pesca", back:"peach / fishing", note:"same word, context tells them apart; pescare = to fish", it:"front"},
+  {cat:"Food", front:"il pesce", back:"fish (the food / animal)", note:"don't mix up with la pesca", it:"front"},
+  {cat:"Food", front:"la carne di manzo", back:"beef", note:"la carne = meat", it:"front"},
+  {cat:"Food", front:"i ceci", back:"chickpeas", note:"", it:"front"},
+  {cat:"Food", front:"il pranzo", back:"lunch", note:"per pranzo = for lunch; la cena = dinner", it:"front"},
+  {cat:"Food", front:"l'insalata", back:"salad", note:"un'insalata: apostrophe before a vowel", it:"front"},
+
+  // ---- Passato Prossimo: essere verbs, alzarsi, cucinare ----
+  {cat:"Passato Prossimo", front:"Helper verb for verbs of movement (andare, tornare, venire)?", back:"essere", note:"sono andato, sono tornato, sono venuto"},
+  {cat:"Passato Prossimo", front:"I went. (sono andato or ho andato?)", back:"Sono andato.", note:"andare is movement, so essere. Never ho andato"},
+  {cat:"Passato Prossimo", front:"I came back.", back:"Sono tornato.", note:"tornare is movement, so essere (present: io torno)"},
+  {cat:"Passato Prossimo", front:"I got up.", back:"Mi sono alzato.", note:"alzarsi is reflexive: reflexive verbs also take essere"},
+  {cat:"Passato Prossimo", front:"What time did you get up today?", back:"A che ora ti sei alzato oggi?", note:"ti sei alzato: reflexive + essere"},
+  {cat:"Passato Prossimo", front:"I got up at 8:15.", back:"Mi sono alzato alle otto e un quarto.", note:"e un quarto = quarter past"},
+  {cat:"Passato Prossimo", front:"Did you cook today?", back:"Hai cucinato oggi?", note:"cucinare takes avere"},
+  {cat:"Passato Prossimo", front:"I didn't cook.", back:"Non ho cucinato.", note:"non before ho"},
+  {cat:"Passato Prossimo", front:"I studied Italian yesterday.", back:"Ho studiato l'italiano ieri.", note:""},
+  {cat:"Passato Prossimo", front:"I made a salad with chickpeas for lunch.", back:"Ho fatto un'insalata con i ceci per pranzo.", note:"fatto = irregular past of fare"},
+  {cat:"Passato Prossimo", front:"I just finished studying Italian.", back:"Ho appena finito di studiare l'italiano.", note:"appena = just; finire di + infinitive"},
+
+  // ---- Avere expressions ----
+  {cat:"Avere", front:"Are you sleepy?", back:"Hai sonno?", note:"avere sonno, like avere fame"},
+  {cat:"Avere", front:"Yes, I'm sleepy!", back:"Sì, ho sonno!", note:""},
+  {cat:"Avere", front:"Are you hungry?", back:"Hai fame?", note:""},
+  {cat:"Avere", front:"No, I'm not hungry.", back:"No, non ho fame.", note:""},
+  {cat:"Avere", front:"Do you feel like a coffee?", back:"Hai voglia di un caffè?", note:"avere voglia di = to feel like"},
+
+  // ---- Fare expressions ----
+  {cat:"Fare", front:"to ask a question", back:"fare una domanda", note:"not 'chiedere una domanda'"},
+  {cat:"Fare", front:"You ask a lot of questions!", back:"Fai molte domande!", note:""},
+  {cat:"Fare", front:"to go for a walk", back:"fare una passeggiata", note:""},
+  {cat:"Fare", front:"We go for a walk.", back:"Facciamo una passeggiata.", note:""},
+
+  // ---- Prepositions ----
+  {cat:"Prepositions", front:"A coffee without sugar, please.", back:"Un caffè senza zucchero, per favore.", note:"senza = without"},
 ];
 
 /* ---------- FILL-IN-THE-BLANK SENTENCES ---------- */
@@ -1296,6 +1348,28 @@ const SENTENCES = [
   {cat:"Prepositions", text:"Oggi mangiamo una pizza ___ pizzeria.", translation:"Today we're eating pizza at a pizzeria.", answer:["in"]},
   {cat:"Prepositions", text:"Il gatto dorme ___ il divano e la sedia.", translation:"The cat sleeps between the couch and the chair.", answer:["tra","fra"]},
   {cat:"Prepositions", text:"Vieni ___ me?", translation:"Are you coming to my place?", answer:["da"]},
+
+  {cat:"Piacere", text:"Mi ___ il pesce.", translation:"I like fish. (one thing)", answer:["piace"]},
+  {cat:"Piacere", text:"Mi ___ le pesche.", translation:"I like peaches. (plural)", answer:["piacciono"]},
+  {cat:"Piacere", text:"Ti ___ studiare l'italiano?", translation:"Do you like studying Italian? (verb = singular)", answer:["piace"]},
+  {cat:"Piacere", text:"A lui ___ piace la pizza.", translation:"He likes pizza.", answer:["gli"]},
+  {cat:"Piacere", text:"A lei ___ piace il mare.", translation:"She likes the sea.", answer:["le"]},
+  {cat:"Passato Prossimo", text:"A che ora ti sei ___ oggi?", translation:"What time did you get up today? (alzarsi)", answer:["alzato","alzata"]},
+  {cat:"Passato Prossimo", text:"Ieri ___ tornato tardi.", translation:"Yesterday I came back late. (essere or avere?)", answer:["sono"]},
+  {cat:"Passato Prossimo", text:"Ieri ___ andato in palestra.", translation:"Yesterday I went to the gym. (essere or avere?)", answer:["sono"]},
+  {cat:"Passato Prossimo", text:"Oggi non ho ___.", translation:"I didn't cook today. (cucinare)", answer:["cucinato"]},
+  {cat:"Avere", text:"Sì, ho ___!", translation:"Yes, I'm sleepy!", answer:["sonno"]},
+  {cat:"Fare", text:"Noi ___ una passeggiata.", translation:"We go for a walk. (fare)", answer:["facciamo"]},
+  {cat:"Fare", text:"Tu ___ molte domande!", translation:"You ask a lot of questions! (fare)", answer:["fai"]},
+  {cat:"Prepositions", text:"Ho bisogno di una penna ___ scrivere.", translation:"I need a pen to write.", answer:["per"]},
+  {cat:"Prepositions", text:"Ho comprato un paio ___ scarpe nuove.", translation:"I bought a pair of new shoes.", answer:["di"]},
+  {cat:"Prepositions", text:"Vado ___ scuola ogni giorno.", translation:"I go to school every day.", answer:["a"]},
+  {cat:"Prepositions", text:"Vado in vacanza ___ montagna.", translation:"I'm going on vacation in the mountains.", answer:["in"]},
+  {cat:"Prepositions", text:"Stasera andiamo a cena ___ Maria.", translation:"Tonight we're going to dinner at Maria's.", answer:["da"]},
+  {cat:"Prepositions", text:"Ho dimenticato il compito ___ casa.", translation:"I forgot my homework at home.", answer:["a"]},
+  {cat:"Prepositions", text:"Un caffè ___ zucchero, per favore.", translation:"A coffee without sugar, please.", answer:["senza"]},
+  {cat:"Food", text:"Per pranzo ho mangiato un'___.", translation:"For lunch I ate a salad.", answer:["insalata"]},
+  {cat:"Food", text:"Non mi piace la carne di ___.", translation:"I don't like beef.", answer:["manzo"]},
 ];
 
 /* ---------- SHARED STATE ---------- */
